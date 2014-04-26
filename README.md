@@ -4,7 +4,7 @@ This project aim to bring familiar message bus architectural style for Orleans f
 
 ### Prerequisites
 - [Orleans SDK](https://orleans.codeplex.com/wikipage?title=Orleans%20Setup%20for%20Developers&referringTitle=Home "Link to Orleans SDK installation page")
-- Familiarity with [Orleans.IoC]
+- Familiarity with [Orleans.IoC](https://github.com/yevhen/Orleans.IoC)
 - Some familiarity with Orleans API
 
 ### How to install
