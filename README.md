@@ -1,6 +1,6 @@
 ## Message bus for Orleans
 
-This project aim to bring familiar message bus architectural style for Orleans framework.
+This project aim to bring familiar message bus architectural style to Orleans framework.
 
 ### Prerequisites
 - [Orleans SDK](https://orleans.codeplex.com/wikipage?title=Orleans%20Setup%20for%20Developers&referringTitle=Home "Link to Orleans SDK installation page")
