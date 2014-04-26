@@ -1,0 +1,22 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Orleans.Bus</id>
+    <version>$version$</version>
+    <authors>Yevhen Bobrov</authors>
+    <owners>Yevhen Bobrov</owners>
+    <licenseUrl>http://github.com/yevhen/Orleans.Bus/blob/master/LICENSE</licenseUrl>
+    <projectUrl>http://github.com/yevhen/Orleans.Bus</projectUrl>
+    <iconUrl>https://github.com/yevhen/Orleans.Bus/raw/master/Logo.png</iconUrl>
+    <description>Message bus for Orleans framework</description>
+    <tags>Orleans messaging bus actor concurrency CQRS</tags>
+    <dependencies>
+       <dependency id="Orleans.IoC" version="1.1.0.0" />
+    </dependencies>      
+  </metadata>
+  <files>
+    <file src="Output\Package\Release\Orleans.Bus.dll" target="lib/net45" />
+    <file src="Output\Package\Release\Orleans.Bus.xml" target="lib/net45" />
+    <file src="Output\Package\Release\Orleans.Bus.pdb" target="lib/net45" />
+  </files>
+</package>
