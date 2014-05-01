@@ -35,8 +35,9 @@
     <Reference Include="Fasterflect">
       <HintPath>..\..\packages\fasterflect.2.1.3\lib\net40\Fasterflect.dll</HintPath>
     </Reference>
-    <Reference Include="Orleans.IoC">
-      <HintPath>..\..\packages\Orleans.IoC.2.0.2.0\lib\net45\Orleans.IoC.dll</HintPath>
+    <Reference Include="Orleans.IoC, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Orleans.IoC.2.1.0.0\lib\net45\Orleans.IoC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -52,7 +53,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Packages\Orleans.IoC.2.0.2.0\linked\Grain.cs">
+    <Compile Include="..\..\Packages\Orleans.IoC.2.1.0.0\linked\Grain.cs">
       <Link>Grain.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

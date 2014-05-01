@@ -38,8 +38,9 @@
       <HintPath>$(OrleansSDK)\Binaries\OrleansClient\Orleans.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Orleans.IoC">
-      <HintPath>..\..\packages\Orleans.IoC.2.0.2.0\lib\net45\Orleans.IoC.dll</HintPath>
+    <Reference Include="Orleans.IoC, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Orleans.IoC.2.1.0.0\lib\net45\Orleans.IoC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -49,6 +50,9 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes.cs" />
+    <Compile Include="Bus.cs" />
+    <Compile Include="Handlers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -12,3 +12,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("0.1.0.0")]
 
 [assembly: InternalsVisibleTo("Orleans.Bus.Tests")]
+[assembly: InternalsVisibleTo("Orleans.Bus.Integration.Tests")]
