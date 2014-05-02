@@ -9,48 +9,49 @@ using Orleans.IoC;
 
 namespace Orleans.Bus
 {
-    public interface IBus
+    public class MessageBus : IServerMessageBus, IClientMessageBus
     {
-        Task Send(long id, object command);
-        Task<TResult> Query<TResult>(long id, object query);
-    }
+        public static IServerMessageBus Server;
+        public static IClientMessageBus Client;
 
-    public class Bus : IBus
-    {
-        public static IBus Instance = new Bus(GrainRuntime.Instance).Initialize();
+        static MessageBus()
+        {
+            var instance = new MessageBus(GrainRuntime.Instance);
+            instance.Initialize();
+
+            Server = instance;
+            Client = instance;
+        }
 
         readonly Dictionary<Type, CommandHandler> commands = 
              new Dictionary<Type, CommandHandler>();        
         
         readonly Dictionary<Type, QueryHandler> queries =
              new Dictionary<Type, QueryHandler>();
-        
+
+        readonly Dictionary<Type, EventHandler> events =
+             new Dictionary<Type, EventHandler>();
+
         readonly IGrainRuntime runtime;
 
-        public Bus(IGrainRuntime runtime)
+        MessageBus(IGrainRuntime runtime)
         {
             this.runtime = runtime;
         }
 
-        IBus Initialize()
+        void Initialize()
         {
             foreach (var grain in runtime.RegisteredGrainTypes())
             {
-                var handlers = Find(grain);
-                Register(grain, handlers);
+                Register(grain);                
             }
-
-            return this;
         }
 
-        static IEnumerable<MethodInfo> Find(Type grain)
+        void Register(Type grain)
         {
-            return grain.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                        .Where(method => method.HasAttribute<HandlerAttribute>());
-        }
+            var handlers = grain.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                .Where(method => method.HasAttribute<HandlerAttribute>());
 
-        void Register(Type grain, IEnumerable<MethodInfo> handlers)
-        {
             foreach (var handler in handlers)
             {
                 if (CommandHandler.Satisfies(handler))
@@ -67,36 +68,87 @@ namespace Orleans.Bus
 
                 throw new NotSupportedException("Unsupported handler signature: " + handler);
             }
+
+            foreach (var publisher in grain.Attributes<PublisherAttribute>())
+            {
+                RegisterEventHandler(grain, publisher.Event);
+            }
         }
 
-        void RegisterCommandHandler(Type grain, MethodInfo handler)
+        void RegisterCommandHandler(Type grain, MethodInfo method)
         {
-            var commandHandler = new CommandHandler(grain, handler);
-            commands.Add(commandHandler.Command, commandHandler);
+            var handler = new CommandHandler(grain, method);
+            commands.Add(handler.Command, handler);
         }
 
-        void RegisterQueryHandler(Type grain, MethodInfo handler)
+        void RegisterQueryHandler(Type grain, MethodInfo method)
         {
-            var queryHandler = QueryHandler.Create(grain, handler);
-            queries.Add(queryHandler.Query, queryHandler);
+            var handler = QueryHandler.Create(grain, method);
+            queries.Add(handler.Query, handler);
         }
 
-        public Task Send(long id, object command)
+        void RegisterEventHandler(Type grain, Type @event)
+        {
+            var handler = EventHandler.Create(grain, @event);
+            events.Add(@event, handler);
+        }
+
+        Task ICommandSender.Send(long id, object command)
         {
             var handler = commands[command.GetType()];
 
             var grain = runtime.Reference(handler.Grain, id);
 
-            return handler.Dispatch(grain, command);
+            return handler.Handle(grain, command);
         }
 
-        public Task<TResult> Query<TResult>(long id, object query)
+        Task<TResult> IQueryHandler.Query<TResult>(long id, object query)
         {
             var handler = (QueryHandler<TResult>) queries[query.GetType()];
 
             var grain = runtime.Reference(handler.Grain, id);
 
-            return handler.Dispatch(grain, query);
+            return handler.Handle(grain, query);
+        }
+
+        void IEventPublisher.Publish<TEvent>(IObservablePublisher publisher, TEvent @event)
+        {
+            // TODO : check whether grain had advertised this type of event via [Publisher]
+
+            // double-dispatch
+            publisher.Publish(@event);
+        }
+
+        async Task<SubscriptionToken> ISubscriptionManager.CreateToken<T>(IObserve<T> client)
+        {
+            var observer = new DynamicObserver(client);
+            
+            var reference = await runtime.Create((IObserve) observer);
+
+            return new SubscriptionToken(reference);
+        }
+
+        void ISubscriptionManager.DeleteToken(SubscriptionToken token)
+        {
+            runtime.Delete(token.Reference);
+        }
+
+        public Task Subscribe<TEvent>(long id, IObserve<TEvent> client, SubscriptionToken token)
+        {
+            var handler = events[typeof(TEvent)];
+
+            var grain = runtime.Reference(handler.Grain, id);
+
+            return handler.Subscribe((IObservableGrain)grain, token.Reference);
+        }
+
+        public Task Unsubscribe<TEvent>(long id, IObserve<TEvent> client, SubscriptionToken token)
+        {
+            var handler = events[typeof(TEvent)];
+
+            var grain = runtime.Reference(handler.Grain, id);
+
+            return handler.Unsubscribe((IObservableGrain)grain, token.Reference);
         }
     }
 }

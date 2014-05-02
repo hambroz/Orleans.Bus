@@ -7,31 +7,41 @@ using Orleans.IoC;
 namespace Orleans.Bus
 {
     [Immutable]
-    public class FooCommand : Command
+    public class DoFoo : Command
     {
-        public string Text;
+        public readonly string Text;
+
+        public DoFoo(string text)
+        {
+            Text = text;
+        }
     }
 
     [Immutable]
-    public class BarCommand : Command
+    public class DoBar : Command
     {
-        public string Text;
+        public readonly string Text;
+
+        public DoBar(string text)
+        {
+            Text = text;
+        }
     }
 
     [Immutable]
-    public class FooQuery : Query<string>
+    public class GetFoo : Query<string>
     {}
 
     [Immutable]
-    public class BarQuery : Query<string>
+    public class GetBar : Query<string>
     {}
 
     public interface ITestGrain : IGrain, IGrainWithLongId
     {
-        [Handler] Task Handle(FooCommand command);
-        [Handler] Task Handle(BarCommand command);
+        [Handler] Task Handle(DoFoo cmd);
+        [Handler] Task Handle(DoBar cmd);
 
-        [Handler] Task<string> Answer(FooQuery query);
-        [Handler] Task<string> Answer(BarQuery query);
+        [Handler] Task<string> Answer(GetFoo query);
+        [Handler] Task<string> Answer(GetBar query);
     }
 }

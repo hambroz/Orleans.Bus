@@ -7,8 +7,11 @@ namespace Orleans.Bus
     {}
 
     public abstract class Query
+    {}    
+    
+    public abstract class Query<TResult> : Query
     {}
 
-    public abstract class Query<TResult> : Query
+    public abstract class Event
     {}
 }

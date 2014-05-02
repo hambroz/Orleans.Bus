@@ -5,42 +5,14 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    class CommandHandler
-    {
-        public static bool Satisfies(MethodInfo method)
-        {
-            return !method.IsGenericMethod &&
-                    method.GetParameters().Length == 1 &&
-                    method.ReturnType == typeof(Task);
-        }
-
-        public readonly Type Grain;
-        public readonly Type Command;
-
-        readonly MethodInfo handler;
-
-        public CommandHandler(Type grain, MethodInfo handler)
-        {
-            Grain = grain;
-            Command = handler.GetParameters()[0].ParameterType;
-
-            this.handler = handler;
-        }
-
-        public Task Dispatch(object grain, object command)
-        {
-            return (Task)handler.Invoke(grain, new[] { command });
-        }
-    }
-
     abstract class QueryHandler
     {
         public static bool Satisfies(MethodInfo method)
         {
             return !method.IsGenericMethod &&
-                    method.GetParameters().Length == 1 &&
-                    typeof(Task).IsAssignableFrom(method.ReturnType) &&
-                    method.ReturnType.IsConstructedGenericType;
+                   method.GetParameters().Length == 1 &&
+                   typeof(Task).IsAssignableFrom(method.ReturnType) &&
+                   method.ReturnType.IsConstructedGenericType;
         }
 
         public readonly Type Grain;
@@ -72,7 +44,7 @@ namespace Orleans.Bus
             this.handler = handler;
         }
 
-        public Task<TResult> Dispatch(object grain, object query)
+        public Task<TResult> Handle(object grain, object query)
         {
             return (Task<TResult>)handler.Invoke(grain, new[] { query });
         }

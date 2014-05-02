@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("Orleans.Bus")]
-[assembly: AssemblyDescription("Message bus for Orleans framework")]
 [assembly: AssemblyCopyright("Copyright © Yevhen Bobrov 2014")]
 
 [assembly: ComVisible(false)]
@@ -13,3 +12,5 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Orleans.Bus.Tests")]
 [assembly: InternalsVisibleTo("Orleans.Bus.Integration.Tests")]
+
+[assembly: AssemblyDescription("Contains.Orleans.Generated.Code")]
