@@ -8,20 +8,15 @@ namespace Orleans.Bus
 {
     public abstract class ObservableGrain : Grain, IObservableGrain
     {
-        public ObserverCollection Observers;
+        public IObserverCollection Observers = new ObserverCollection();
 
-        protected ObservableGrain()
+        public Task Attach(Observes s, Type e)
         {
-            Observers = new ObserverCollection(Runtime);
-        }
-
-        public Task Subscribe(Type e, ObserverReference<Observes> o)
-        {
-            Observers.Attach(o, e);
+            Observers.Attach(s, e);
             return TaskDone.Done;
         }
 
-        public Task Unsubscribe(Type e, ObserverReference<Observes> o)
+        public Task Detach(Observes o, Type e)
         {
             Observers.Detach(o, e);
             return TaskDone.Done;
@@ -30,7 +25,7 @@ namespace Orleans.Bus
 
     public abstract class ObservableGrainWithGuidId : ObservableGrain, IGrainWithGuidId
     {
-        protected void Publish<TEvent>(TEvent e)
+        protected void Notify<TEvent>(TEvent e)
         {
             Observers.Notify(Id(this), e);
         }
@@ -38,7 +33,7 @@ namespace Orleans.Bus
 
     public abstract class ObservableGrainWithLongId : ObservableGrain, IGrainWithLongId
     {
-        protected void Publish<TEvent>(TEvent e)
+        protected void Notify<TEvent>(TEvent e)
         {
             Observers.Notify(Id(this), e);
         }
@@ -46,7 +41,7 @@ namespace Orleans.Bus
 
     public abstract class ObservableGrainWithStringId : ObservableGrain, IGrainWithStringId
     {
-        protected void Publish<TEvent>(TEvent e)
+        protected void Notify<TEvent>(TEvent e)
         {
             Observers.Notify(Id(this), e);
         }
@@ -55,20 +50,15 @@ namespace Orleans.Bus
     public abstract class ObservableGrain<TGrainState> : Grain<TGrainState>, IObservableGrain
         where TGrainState : class, IGrainState
     {
-        public ObserverCollection Observers;
+        public IObserverCollection Observers = new ObserverCollection();
 
-        protected ObservableGrain()
+        public Task Attach(Observes s, Type e)
         {
-            Observers = new ObserverCollection(Runtime);
-        }
-
-        public Task Subscribe(Type e, ObserverReference<Observes> o)
-        {
-            Observers.Attach(o, e);
+            Observers.Attach(s, e);
             return TaskDone.Done;
         }
 
-        public Task Unsubscribe(Type e, ObserverReference<Observes> o)
+        public Task Detach(Observes o, Type e)
         {
             Observers.Detach(o, e);
             return TaskDone.Done;
@@ -78,7 +68,7 @@ namespace Orleans.Bus
     public abstract class ObservableGrainWithGuidId<TGrainState> : ObservableGrain<TGrainState>, IGrainWithGuidId
         where TGrainState : class, IGrainState
     {
-        protected void Publish<TEvent>(TEvent e)
+        protected void Notify<TEvent>(TEvent e)
         {
             Observers.Notify(Id(this), e);
         }
@@ -87,7 +77,7 @@ namespace Orleans.Bus
     public abstract class ObservableGrainWithLongId<TGrainState> : ObservableGrain<TGrainState>, IGrainWithLongId
         where TGrainState : class, IGrainState
     {
-        protected void Publish<TEvent>(TEvent e)
+        protected void Notify<TEvent>(TEvent e)
         {
             Observers.Notify(Id(this), e);
         }
@@ -96,7 +86,7 @@ namespace Orleans.Bus
     public abstract class ObservableGrainWithStringId<TGrainState> : ObservableGrain<TGrainState>, IGrainWithStringId
         where TGrainState : class, IGrainState
     {
-        protected void Publish<TEvent>(TEvent e)
+        protected void Notify<TEvent>(TEvent e)
         {
             Observers.Notify(Id(this), e);
         }

@@ -9,21 +9,78 @@ using Orleans.IoC;
 
 namespace Orleans.Bus
 {
+    /// <summary>
+    /// Central communication hub for message exchanges
+    /// between grains and between clients and grains.
+    /// 
+    /// Allows clients to dynamically subscribe/unsubscribe 
+    /// to notifications about particular events.
+    /// </summary>
     public interface IMessageBus
     {
+        /// <summary>
+        /// Sends command message to a grain with the given id
+        /// </summary>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="command">The command to send</param>
+        /// <returns>Promise</returns>
         Task Send(long id, object command);
+
+        /// <summary>
+        /// Sends query message to a grain with the given id and casts result to the specified type
+        /// </summary>
+        /// <typeparam name="TResult">The type of result</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="query">The query to send</param>
+        /// <returns>Promise</returns>
         Task<TResult> Query<TResult>(long id, object query);
 
+        /// <summary>
+        /// Subscribes given observer to receive events of the specified type 
+        /// from the grain with the given id
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="observer">Client observer proxy</param>
+        /// <returns>Promise</returns>
         Task Subscribe<TEvent>(long id, IObserver observer);
+
+        /// <summary>
+        /// Unsubscribes given observer from receiving events of the specified type 
+        /// from the grain with the given id
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="observer">Client observer proxy</param>
+        /// <returns>Promise</returns>
         Task Unsubscribe<TEvent>(long id, IObserver observer);
 
+        /// <summary>
+        /// Creates opaque client observer proxy to be used 
+        /// for subscribing to event notifications
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <returns>Promise</returns>
         Task<IObserver> CreateObserver(Observes client);
+
+        /// <summary>
+        /// Deletes (make available to GC) an opaque client observer proxy, 
+        /// which was previously created
+        /// </summary>
+        /// <param name="observer">Client observer proxy</param>
         void DeleteObserver(IObserver observer);
     }
 
+    /// <summary>
+    /// Default implementation of <see cref="IMessageBus"/>
+    /// </summary>
     public class MessageBus : IMessageBus
     {
-        public static IMessageBus Instance = new MessageBus(GrainRuntime.Instance).Initialize();
+        /// <summary>
+        /// Globally available default instance of <see cref="IMessageBus"/>
+        /// </summary>
+        public static readonly IMessageBus Instance = 
+           new MessageBus(GrainRuntime.Instance).Initialize();
 
         readonly Dictionary<Type, CommandHandler> commands = 
              new Dictionary<Type, CommandHandler>();        

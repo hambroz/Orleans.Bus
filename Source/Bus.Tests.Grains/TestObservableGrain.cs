@@ -7,7 +7,7 @@ namespace Orleans.Bus
     {
         public Task Handle(PublishText command)
         {
-            Publish(new TextPublished(command.Text));
+            Notify(new TextPublished(command.Text));
 
             return TaskDone.Done;
         }

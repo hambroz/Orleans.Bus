@@ -68,8 +68,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ObservableCollectionFixture.cs" />
     <Compile Include="PubSubFixture.cs" />
     <Compile Include="RequestResponseFixture.cs" />
+    <Compile Include="TestClient.cs" />
     <Compile Include="Utility\OrleansSiloForTesting.cs" />
   </ItemGroup>
   <ItemGroup>

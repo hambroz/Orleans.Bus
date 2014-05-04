@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 
 using NUnit.Framework;
 
@@ -35,25 +34,22 @@ namespace Orleans.Bus
             Assert.AreEqual("sub", client.PublishedText);
             Assert.AreEqual(grainId, client.SenderId);
         }
-    }
 
-    public class TestClient : Observes
-    {
-        public readonly EventWaitHandle EventReceived = new ManualResetEvent(false);
-
-        public long SenderId = -1;
-        public string PublishedText = "";
-
-        public void On(object sender, object e)
+        [Test]
+        public void Creating_duplicate_observer_for_the_same_client_reference()
         {
-            this.On((long)sender, (dynamic)e);
-        }
+            var duplicate = bus.CreateObserver(client).Result;
 
-        void On(long sender, TextPublished e)
-        {
-            SenderId = sender;
-            PublishedText = e.Text;
-            EventReceived.Set();
+            Assert.AreNotSame(observer, duplicate, 
+                "Observers should be different");
+
+            Assert.AreNotSame(observer, duplicate,
+                "Observer references will also be different");
+
+            Assert.AreNotSame(observer.GetProxy(), duplicate.GetProxy(),
+                "And underlying proxies are also different");
+            
+            // NOTE: so ideally you should create observer only once
         }
     }
 }

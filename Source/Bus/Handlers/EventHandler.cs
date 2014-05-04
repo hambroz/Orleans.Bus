@@ -23,13 +23,13 @@ namespace Orleans.Bus
         public async Task Subscribe(object grain, IObserver observer)
         {
             var observable = (IObservableGrain) grain;
-            await observable.Subscribe(Event, observer.GetReference());
+            await observable.Attach(observer.GetProxy(), Event);
         }
 
         public async Task Unsubscribe(object grain, IObserver observer)
         {
             var observable = (IObservableGrain)grain;
-            await observable.Unsubscribe(Event, observer.GetReference());
+            await observable.Detach(observer.GetProxy(), Event);
         }
     }
 }
