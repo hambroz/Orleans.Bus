@@ -2,11 +2,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-using Orleans.IoC;
-
 namespace Orleans.Bus
 {
-    public class TestGrain : GrainWithLongId, ITestGrain
+    public class TestMessageBasedGrain : MessageBasedGrainWithLongId, ITestMessageBasedGrain
     {
         string fooText = "";
         string barText = "";

@@ -39,9 +39,6 @@
       <HintPath>$(OrleansSDK)\Binaries\OrleansClient\Orleans.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Orleans.IoC">
-      <HintPath>..\..\packages\Orleans.IoC.2.3.0.0\lib\net45\Orleans.IoC.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -52,12 +49,20 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="Handlers\CommandHandler.cs" />
+    <Compile Include="Identity.cs" />
+    <Compile Include="Infrastructure\GrainIdentityService.cs" />
+    <Compile Include="Infrastructure\GrainObserverReferenceService.cs" />
+    <Compile Include="Infrastructure\GrainReferenceService.cs" />
+    <Compile Include="Infrastructure\GrainRuntimeService.cs" />
+    <Compile Include="Infrastructure\OrleansStaticFactories.cs" />
     <Compile Include="MessageBus.cs" />
     <Compile Include="Handlers\EventHandler.cs" />
     <Compile Include="Observable.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Handlers\QueryHandler.cs" />
+    <Compile Include="Utility\AggregateExceptionExtensions.cs" />
+    <Compile Include="Utility\DictionaryExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Packages.config" />

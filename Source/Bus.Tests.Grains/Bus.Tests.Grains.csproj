@@ -35,9 +35,6 @@
     <Reference Include="Fasterflect">
       <HintPath>..\..\packages\fasterflect.2.1.3\lib\net40\Fasterflect.dll</HintPath>
     </Reference>
-    <Reference Include="Orleans.IoC">
-      <HintPath>..\..\packages\Orleans.IoC.2.3.0.0\lib\net45\Orleans.IoC.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -52,15 +49,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Packages\Orleans.IoC.2.3.0.0\linked\Grain.cs">
-      <Link>Grain.cs</Link>
+    <Compile Include="..\Linked\MessageBasedGrain.cs">
+      <Link>MessageBasedGrain.cs</Link>
     </Compile>
-    <Compile Include="..\Linked\ObservableGrain.cs">
-      <Link>ObservableGrain.cs</Link>
-    </Compile>
+    <Compile Include="Infrastructure\TestGrain1.cs" />
+    <Compile Include="Infrastructure\TestGrain2.cs" />
+    <Compile Include="Infrastructure\TestGrain3.cs" />
+    <Compile Include="Infrastructure\TestGrainWithGuidId.cs" />
+    <Compile Include="Infrastructure\TestGrainWithLongId.cs" />
+    <Compile Include="Infrastructure\TestGrainWithMissingExtendedPrimaryKeyAttribute.cs" />
+    <Compile Include="Infrastructure\TestGrainWithStringId.cs" />
+    <Compile Include="Infrastructure\TestObservableGrain.cs" />
+    <Compile Include="Infrastructure\TestPersistentGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestObservableGrain.cs" />
-    <Compile Include="TestGrain.cs" />
+    <Compile Include="TestObservableMessageBasedGrain.cs" />
+    <Compile Include="TestMessageBasedGrain.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Packages.config" />

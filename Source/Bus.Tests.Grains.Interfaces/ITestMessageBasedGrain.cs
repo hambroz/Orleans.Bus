@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-using Orleans.IoC;
-
 namespace Orleans.Bus
 {
     [Immutable]
@@ -36,7 +34,7 @@ namespace Orleans.Bus
     public class GetBar : Query<string>
     {}
 
-    public interface ITestGrain : IGrain, IGrainWithLongId
+    public interface ITestMessageBasedGrain : IGrain, IGrainWithLongId
     {
         [Handler] Task Handle(DoFoo cmd);
         [Handler] Task Handle(DoBar cmd);

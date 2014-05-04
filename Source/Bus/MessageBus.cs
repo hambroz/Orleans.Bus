@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 
 using Fasterflect;
-using Orleans.IoC;
 
 namespace Orleans.Bus
 {

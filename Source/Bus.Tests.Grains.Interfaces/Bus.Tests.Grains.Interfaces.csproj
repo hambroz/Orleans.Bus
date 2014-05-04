@@ -32,9 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Orleans.IoC">
-      <HintPath>..\..\packages\Orleans.IoC.2.3.0.0\lib\net45\Orleans.IoC.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -50,8 +47,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Generic.cs" />
-    <Compile Include="ITestObservableGrain.cs" />
-    <Compile Include="ITestGrain.cs" />
+    <Compile Include="Infrastructure\ITestGrain1.cs" />
+    <Compile Include="Infrastructure\ITestGrain2.cs" />
+    <Compile Include="Infrastructure\ITestGrain3.cs" />
+    <Compile Include="Infrastructure\ITestGrainWithGuidId.cs" />
+    <Compile Include="Infrastructure\ITestGrainWithLongId.cs" />
+    <Compile Include="Infrastructure\ITestGrainWithMissingExtendedPrimaryKeyAttribute.cs" />
+    <Compile Include="Infrastructure\ITestGrainWithStringId.cs" />
+    <Compile Include="Infrastructure\ITestObservableGrain.cs" />
+    <Compile Include="Infrastructure\ITestPersistentGrain.cs" />
+    <Compile Include="ITestObservableMessageBasedGrain.cs" />
+    <Compile Include="ITestMessageBasedGrain.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

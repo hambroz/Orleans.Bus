@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-using Orleans.IoC;
-
 namespace Orleans.Bus
 {
     [Immutable]
@@ -29,7 +27,7 @@ namespace Orleans.Bus
     }
 
     [Publisher(typeof(TextPublished))]
-    public interface ITestObservableGrain : IObservableGrain, IGrainWithLongId
+    public interface ITestObservableMessageBasedGrain : IObservableGrain, IGrainWithLongId
     {
         [Handler] Task Handle(PublishText cmd);
     }
