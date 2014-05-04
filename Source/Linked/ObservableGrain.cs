@@ -9,17 +9,17 @@ namespace Orleans.Bus
 {
     public abstract class ObservableGrain : Grain, IObservableGrain
     {
-        readonly IDictionary<Type, IGrainObserverSubscriptionManager<IObserve>> subscriptions = 
-                    new Dictionary<Type, IGrainObserverSubscriptionManager<IObserve>>();
+        readonly IDictionary<Type, IGrainObserverSubscriptionManager<Observes>> subscriptions = 
+                    new Dictionary<Type, IGrainObserverSubscriptionManager<Observes>>();
 
-        protected Action<IObserve, object> Notify;
+        protected Action<Observes, object> Notify;
 
-        public Task Subscribe(Type e, ObserverReference<IObserve> o)
+        public Task Subscribe(Type e, ObserverReference<Observes> o)
         {
-            IGrainObserverSubscriptionManager<IObserve> manager;
+            IGrainObserverSubscriptionManager<Observes> manager;
             if (!subscriptions.TryGetValue(e, out manager))
             {
-                manager = Runtime.CreateSubscriptionManager<IObserve>();
+                manager = Runtime.CreateSubscriptionManager<Observes>();
                 subscriptions.Add(e, manager);
             }
 
@@ -27,9 +27,9 @@ namespace Orleans.Bus
             return TaskDone.Done;
         }
 
-        public Task Unsubscribe(Type e, ObserverReference<IObserve> o)
+        public Task Unsubscribe(Type e, ObserverReference<Observes> o)
         {
-            IGrainObserverSubscriptionManager<IObserve> manager;
+            IGrainObserverSubscriptionManager<Observes> manager;
             if (subscriptions.TryGetValue(e, out manager))
                 manager.Unsubscribe(o);
             
@@ -38,7 +38,7 @@ namespace Orleans.Bus
 
         protected void Publish<TEvent>(TEvent e)
         {
-            IGrainObserverSubscriptionManager<IObserve> manager;
+            IGrainObserverSubscriptionManager<Observes> manager;
             if (subscriptions.TryGetValue(typeof(TEvent), out manager))
                 manager.Notify(x => Notify(x, e));
         }
@@ -71,18 +71,18 @@ namespace Orleans.Bus
     public abstract class ObservableGrain<TGrainState> : Grain<TGrainState>, IObservableGrain
         where TGrainState : class, IGrainState
     {
-        readonly IDictionary<Type, IGrainObserverSubscriptionManager<IObserve>> subscriptions =
-                    new Dictionary<Type, IGrainObserverSubscriptionManager<IObserve>>();
+        readonly IDictionary<Type, IGrainObserverSubscriptionManager<Observes>> subscriptions =
+                    new Dictionary<Type, IGrainObserverSubscriptionManager<Observes>>();
 
-        protected Action<IObserve, object> Notify;
+        protected Action<Observes, object> Notify;
 
 
-        public Task Subscribe(Type e, ObserverReference<IObserve> o)
+        public Task Subscribe(Type e, ObserverReference<Observes> o)
         {
-            IGrainObserverSubscriptionManager<IObserve> manager;
+            IGrainObserverSubscriptionManager<Observes> manager;
             if (!subscriptions.TryGetValue(e, out manager))
             {
-                manager = Runtime.CreateSubscriptionManager<IObserve>();
+                manager = Runtime.CreateSubscriptionManager<Observes>();
                 subscriptions.Add(e, manager);
             }
 
@@ -90,9 +90,9 @@ namespace Orleans.Bus
             return TaskDone.Done;
         }
 
-        public Task Unsubscribe(Type e, ObserverReference<IObserve> o)
+        public Task Unsubscribe(Type e, ObserverReference<Observes> o)
         {
-            IGrainObserverSubscriptionManager<IObserve> manager;
+            IGrainObserverSubscriptionManager<Observes> manager;
             if (subscriptions.TryGetValue(e, out manager))
                 manager.Unsubscribe(o);
 
@@ -101,7 +101,7 @@ namespace Orleans.Bus
 
         protected void Publish<TEvent>(TEvent e)
         {
-            IGrainObserverSubscriptionManager<IObserve> manager;
+            IGrainObserverSubscriptionManager<Observes> manager;
             if (subscriptions.TryGetValue(typeof(TEvent), out manager))
                 manager.Notify(x => Notify(x, e));
         }

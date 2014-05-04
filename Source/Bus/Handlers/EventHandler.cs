@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
@@ -17,6 +18,18 @@ namespace Orleans.Bus
         public static EventHandler Create(Type grain, Type @event)
         {
             return new EventHandler(grain, @event);
+        }
+
+        public async Task Subscribe(object grain, IObserver observer)
+        {
+            var observable = (IObservableGrain) grain;
+            await observable.Subscribe(Event, observer.GetReference());
+        }
+
+        public async Task Unsubscribe(object grain, IObserver observer)
+        {
+            var observable = (IObservableGrain)grain;
+            await observable.Unsubscribe(Event, observer.GetReference());
         }
     }
 }

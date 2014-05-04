@@ -14,8 +14,11 @@ namespace Orleans.Bus
         Task Send(long id, object command);
         Task<TResult> Query<TResult>(long id, object query);
 
-        Task Subscribe<TEvent>(long id, ObserverReference<IObserve> reference);
-        Task Unsubscribe<TEvent>(long id, ObserverReference<IObserve> reference);
+        Task Subscribe<TEvent>(long id, IObserver observer);
+        Task Unsubscribe<TEvent>(long id, IObserver observer);
+
+        Task<IObserver> CreateObserver(Observes client);
+        void DeleteObserver(IObserver observer);
     }
 
     public class MessageBus : IMessageBus
@@ -112,22 +115,32 @@ namespace Orleans.Bus
             return handler.Handle(grain, query);
         }
 
-        async Task IMessageBus.Subscribe<TEvent>(long id, ObserverReference<IObserve> reference)
+        async Task IMessageBus.Subscribe<TEvent>(long id, IObserver observer)
         {
             var handler = events[typeof(TEvent)];
 
             var grain = runtime.Reference(handler.Grain, id);
 
-            await ((IObservableGrain)grain).Subscribe(handler.Event, reference);
+            await handler.Subscribe(grain, observer);
         }
 
-        async Task IMessageBus.Unsubscribe<TEvent>(long id, ObserverReference<IObserve> reference)
+        async Task IMessageBus.Unsubscribe<TEvent>(long id, IObserver observer)
         {
             var handler = events[typeof(TEvent)];
 
             var grain = runtime.Reference(handler.Grain, id);
 
-            await ((IObservableGrain)grain).Unsubscribe(handler.Event, reference);
+            await handler.Unsubscribe(grain, observer);
+        }
+
+        async Task<IObserver> IMessageBus.CreateObserver(Observes client)
+        {
+            return new Observer(await runtime.CreateObserverReference(client));
+        }
+
+        void IMessageBus.DeleteObserver(IObserver observer)
+        {
+            runtime.DeleteObserverReference(observer.GetReference());
         }
     }
 }

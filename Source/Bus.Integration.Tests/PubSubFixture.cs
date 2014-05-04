@@ -2,7 +2,6 @@
 using System.Threading;
 
 using NUnit.Framework;
-using Orleans.IoC;
 
 namespace Orleans.Bus
 {
@@ -10,19 +9,16 @@ namespace Orleans.Bus
     public class PubSubFixture
     {
         IMessageBus bus;
-        IGrainRuntime runtime;
 
         TestClient client;
-        ObserverReference<IObserve> observer;
+        IObserver observer;
 
         [SetUp]
         public void SetUp()
         {
             bus = MessageBus.Instance;
-            runtime = GrainRuntime.Instance;
-
             client = new TestClient();
-            observer = runtime.CreateObserverReference<IObserve>(client).Result;
+            observer = bus.CreateObserver(client).Result;
         }
 
         [Test]
@@ -36,17 +32,17 @@ namespace Orleans.Bus
         }
     }
 
-    public class TestClient : IObserve
+    public class TestClient : Observes
     {
         public readonly EventWaitHandle EventReceived = new ManualResetEvent(false);
         public string PublishedText = "";
 
         public void On(object sender, object e)
         {
-            this.On(sender, (dynamic)e);
+            this.On((long)sender, (dynamic)e);
         }
 
-        void On(object sender, TextPublished e)
+        void On(long sender, TextPublished e)
         {
             PublishedText = e.Text;
             EventReceived.Set();

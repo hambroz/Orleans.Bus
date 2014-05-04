@@ -5,12 +5,12 @@ using System.Net;
 
 using NUnit.Framework;
 
-using Orleans.IoC;
+using Orleans.Bus;
 using Orleans.Host.SiloHost;
 
 [assembly: OrleansSiloForTestingAction]
 
-namespace Orleans.IoC
+namespace Orleans.Bus
 {
     [AttributeUsage(AttributeTargets.Assembly)]
     public class OrleansSiloForTestingActionAttribute : TestActionAttribute

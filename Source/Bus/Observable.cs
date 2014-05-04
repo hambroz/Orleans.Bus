@@ -6,44 +6,35 @@ using Orleans.IoC;
 
 namespace Orleans.Bus
 {
-    public interface IObserve<in TEvent>
-    {
-        void On(object sender, TEvent e);
-    }
-
-    public interface IObserve : IGrainObserver
+    public interface Observes : IGrainObserver
     {
         void On(object sender, object e);
     }
 
     public interface IObservableGrain : IGrain
     {
-        Task Subscribe(Type e, ObserverReference<IObserve> o);
-        Task Unsubscribe(Type e, ObserverReference<IObserve> o);
+        Task Subscribe(Type e, ObserverReference<Observes> o);
+        Task Unsubscribe(Type e, ObserverReference<Observes> o);
     }
 
-    public class DynamicObserver : IObserve
+    public interface IObserver
+    {}
+
+    public sealed class Observer : IObserver
     {
-        readonly object client;
+        internal readonly ObserverReference<Observes> Reference;
 
-        public DynamicObserver(object client)
-        {
-            this.client = client;
-        }
-
-        public void On(object sender, object e)
-        {
-            ((dynamic)client).On(sender, (dynamic)e);
-        }
-    }
-
-    public class SubscriptionToken
-    {
-        internal readonly IObserve Reference;
-
-        public SubscriptionToken(IObserve reference)
+        internal Observer(ObserverReference<Observes> reference)
         {
             Reference = reference;
+        }
+    }
+
+    internal static class ObserverExtensions
+    {
+        public static ObserverReference<Observes> GetReference(this IObserver observer)
+        {
+            return ((Observer)observer).Reference;
         }
     }
 }
