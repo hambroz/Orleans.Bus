@@ -9,19 +9,18 @@ using Orleans.IoC;
 
 namespace Orleans.Bus
 {
-    public class MessageBus : IServerMessageBus, IClientMessageBus
+    public interface IMessageBus
     {
-        public static IServerMessageBus Server;
-        public static IClientMessageBus Client;
+        Task Send(long id, object command);
+        Task<TResult> Query<TResult>(long id, object query);
 
-        static MessageBus()
-        {
-            var instance = new MessageBus(GrainRuntime.Instance);
-            instance.Initialize();
+        Task Subscribe<TEvent>(long id, ObserverReference<IObserve> reference);
+        Task Unsubscribe<TEvent>(long id, ObserverReference<IObserve> reference);
+    }
 
-            Server = instance;
-            Client = instance;
-        }
+    public class MessageBus : IMessageBus
+    {
+        public static IMessageBus Instance = new MessageBus(GrainRuntime.Instance).Initialize();
 
         readonly Dictionary<Type, CommandHandler> commands = 
              new Dictionary<Type, CommandHandler>();        
@@ -39,12 +38,14 @@ namespace Orleans.Bus
             this.runtime = runtime;
         }
 
-        void Initialize()
+        MessageBus Initialize()
         {
             foreach (var grain in runtime.RegisteredGrainTypes())
             {
                 Register(grain);                
             }
+
+            return this;
         }
 
         void Register(Type grain)
@@ -93,7 +94,7 @@ namespace Orleans.Bus
             events.Add(@event, handler);
         }
 
-        Task ICommandSender.Send(long id, object command)
+        Task IMessageBus.Send(long id, object command)
         {
             var handler = commands[command.GetType()];
 
@@ -102,7 +103,7 @@ namespace Orleans.Bus
             return handler.Handle(grain, command);
         }
 
-        Task<TResult> IQueryHandler.Query<TResult>(long id, object query)
+        Task<TResult> IMessageBus.Query<TResult>(long id, object query)
         {
             var handler = (QueryHandler<TResult>) queries[query.GetType()];
 
@@ -111,44 +112,22 @@ namespace Orleans.Bus
             return handler.Handle(grain, query);
         }
 
-        void IEventPublisher.Publish<TEvent>(IObservablePublisher publisher, TEvent @event)
-        {
-            // TODO : check whether grain had advertised this type of event via [Publisher]
-
-            // double-dispatch
-            publisher.Publish(@event);
-        }
-
-        async Task<SubscriptionToken> ISubscriptionManager.CreateToken<T>(IObserve<T> client)
-        {
-            var observer = new DynamicObserver(client);
-            
-            var reference = await runtime.Create((IObserve) observer);
-
-            return new SubscriptionToken(reference);
-        }
-
-        void ISubscriptionManager.DeleteToken(SubscriptionToken token)
-        {
-            runtime.Delete(token.Reference);
-        }
-
-        public Task Subscribe<TEvent>(long id, IObserve<TEvent> client, SubscriptionToken token)
+        async Task IMessageBus.Subscribe<TEvent>(long id, ObserverReference<IObserve> reference)
         {
             var handler = events[typeof(TEvent)];
 
             var grain = runtime.Reference(handler.Grain, id);
 
-            return handler.Subscribe((IObservableGrain)grain, token.Reference);
+            await ((IObservableGrain)grain).Subscribe(handler.Event, reference);
         }
 
-        public Task Unsubscribe<TEvent>(long id, IObserve<TEvent> client, SubscriptionToken token)
+        async Task IMessageBus.Unsubscribe<TEvent>(long id, ObserverReference<IObserve> reference)
         {
             var handler = events[typeof(TEvent)];
 
             var grain = runtime.Reference(handler.Grain, id);
 
-            return handler.Unsubscribe((IObservableGrain)grain, token.Reference);
+            await ((IObservableGrain)grain).Unsubscribe(handler.Event, reference);
         }
     }
 }

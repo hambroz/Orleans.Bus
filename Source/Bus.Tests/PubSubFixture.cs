@@ -2,30 +2,33 @@
 using System.Threading;
 
 using NUnit.Framework;
+using Orleans.IoC;
 
 namespace Orleans.Bus
 {
     [TestFixture]
     public class PubSubFixture
     {
-        IClientMessageBus bus;
+        IMessageBus bus;
+        IGrainRuntime runtime;
 
         TestClient client;
-        SubscriptionToken token;
+        ObserverReference<IObserve> observer;
 
         [SetUp]
-        public async void SetUp()
+        public void SetUp()
         {
-            bus = MessageBus.Client;
+            bus = MessageBus.Instance;
+            runtime = GrainRuntime.Instance;
 
             client = new TestClient();
-            token  = await bus.CreateToken(client);
+            observer = runtime.CreateObserverReference<IObserve>(client).Result;
         }
 
         [Test]
         public async void When_subscribed()
         {
-            await bus.Subscribe<TextPublished>(11, client, token);
+            await bus.Subscribe<TextPublished>(11, observer);
             await bus.Send(11, new PublishText("sub"));
             
             client.EventReceived.WaitOne(TimeSpan.FromSeconds(10));
@@ -33,12 +36,17 @@ namespace Orleans.Bus
         }
     }
 
-    public class TestClient : IObserve<TextPublished>
+    public class TestClient : IObserve
     {
         public readonly EventWaitHandle EventReceived = new ManualResetEvent(false);
         public string PublishedText = "";
-            
-        public void On(object sender, TextPublished e)
+
+        public void On(object sender, object e)
+        {
+            this.On(sender, (dynamic)e);
+        }
+
+        void On(object sender, TextPublished e)
         {
             PublishedText = e.Text;
             EventReceived.Set();

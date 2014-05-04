@@ -7,21 +7,19 @@ using Orleans.IoC;
 
 namespace Orleans.Bus
 {
-    public abstract class ObservableGrain : Grain, IObservableGrain, IObservablePublisher
+    public abstract class ObservableGrain : Grain, IObservableGrain
     {
-        public IServerMessageBus Bus = MessageBus.Server;
-
         readonly IDictionary<Type, IGrainObserverSubscriptionManager<IObserve>> subscriptions = 
                     new Dictionary<Type, IGrainObserverSubscriptionManager<IObserve>>();
 
         protected Action<IObserve, object> Notify;
 
-        public Task Subscribe(Type e, IObserve o)
+        public Task Subscribe(Type e, ObserverReference<IObserve> o)
         {
             IGrainObserverSubscriptionManager<IObserve> manager;
             if (!subscriptions.TryGetValue(e, out manager))
             {
-                manager = Runtime.Create<IObserve>();
+                manager = Runtime.CreateSubscriptionManager<IObserve>();
                 subscriptions.Add(e, manager);
             }
 
@@ -29,7 +27,7 @@ namespace Orleans.Bus
             return TaskDone.Done;
         }
 
-        public Task Unsubscribe(Type e, IObserve o)
+        public Task Unsubscribe(Type e, ObserverReference<IObserve> o)
         {
             IGrainObserverSubscriptionManager<IObserve> manager;
             if (subscriptions.TryGetValue(e, out manager))
@@ -38,16 +36,11 @@ namespace Orleans.Bus
             return TaskDone.Done;
         }
 
-        void IObservablePublisher.Publish<TEvent>(TEvent e)
+        protected void Publish<TEvent>(TEvent e)
         {
             IGrainObserverSubscriptionManager<IObserve> manager;
             if (subscriptions.TryGetValue(typeof(TEvent), out manager))
                 manager.Notify(x => Notify(x, e));
-        }
-
-        protected void Publish<TEvent>(TEvent e)
-        {
-            Bus.Publish(this, e);
         }
     }
 
@@ -75,22 +68,21 @@ namespace Orleans.Bus
         }
     }
 
-    public abstract class ObservableGrain<TGrainState> : Grain<TGrainState>, IObservableGrain, IObservablePublisher 
+    public abstract class ObservableGrain<TGrainState> : Grain<TGrainState>, IObservableGrain
         where TGrainState : class, IGrainState
     {
-        public IServerMessageBus Bus = MessageBus.Server;
-
         readonly IDictionary<Type, IGrainObserverSubscriptionManager<IObserve>> subscriptions =
                     new Dictionary<Type, IGrainObserverSubscriptionManager<IObserve>>();
 
         protected Action<IObserve, object> Notify;
 
-        public Task Subscribe(Type e, IObserve o)
+
+        public Task Subscribe(Type e, ObserverReference<IObserve> o)
         {
             IGrainObserverSubscriptionManager<IObserve> manager;
             if (!subscriptions.TryGetValue(e, out manager))
             {
-                manager = Runtime.Create<IObserve>();
+                manager = Runtime.CreateSubscriptionManager<IObserve>();
                 subscriptions.Add(e, manager);
             }
 
@@ -98,7 +90,7 @@ namespace Orleans.Bus
             return TaskDone.Done;
         }
 
-        public Task Unsubscribe(Type e, IObserve o)
+        public Task Unsubscribe(Type e, ObserverReference<IObserve> o)
         {
             IGrainObserverSubscriptionManager<IObserve> manager;
             if (subscriptions.TryGetValue(e, out manager))
@@ -107,16 +99,11 @@ namespace Orleans.Bus
             return TaskDone.Done;
         }
 
-        void IObservablePublisher.Publish<TEvent>(TEvent e)
+        protected void Publish<TEvent>(TEvent e)
         {
             IGrainObserverSubscriptionManager<IObserve> manager;
             if (subscriptions.TryGetValue(typeof(TEvent), out manager))
                 manager.Notify(x => Notify(x, e));
-        }
-
-        protected void Publish<TEvent>(TEvent e)
-        {
-            Bus.Publish(this, e);
         }
     }
 

@@ -5,7 +5,7 @@ namespace Orleans.Bus
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class HandlerAttribute : Attribute
-    {}
+    { }
 
     [AttributeUsage(AttributeTargets.Interface)]
     public class PublisherAttribute : Attribute

@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 
+using Orleans.IoC;
+
 namespace Orleans.Bus
 {
     public interface IObserve<in TEvent>
@@ -16,13 +18,8 @@ namespace Orleans.Bus
 
     public interface IObservableGrain : IGrain
     {
-        Task Subscribe(Type e, IObserve o);
-        Task Unsubscribe(Type e, IObserve o);
-    }
-
-    public interface IObservablePublisher
-    {
-        void Publish<TEvent>(TEvent e);
+        Task Subscribe(Type e, ObserverReference<IObserve> o);
+        Task Unsubscribe(Type e, ObserverReference<IObserve> o);
     }
 
     public class DynamicObserver : IObserve

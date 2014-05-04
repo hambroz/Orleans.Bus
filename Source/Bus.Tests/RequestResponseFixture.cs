@@ -5,12 +5,12 @@ namespace Orleans.Bus
     [TestFixture]
     public class RequestResponseFixture
     {
-        IClientMessageBus bus;
+        IMessageBus bus;
 
         [SetUp]
         public void SetUp()
         {
-            bus = MessageBus.Client;
+            bus = MessageBus.Instance;
         }
 
         [Test]

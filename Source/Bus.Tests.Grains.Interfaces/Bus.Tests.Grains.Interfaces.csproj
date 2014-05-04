@@ -32,9 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Orleans.IoC, Version=2.1.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Orleans.IoC.2.1.1.0\lib\net45\Orleans.IoC.dll</HintPath>
+    <Reference Include="Orleans.IoC">
+      <HintPath>..\..\packages\Orleans.IoC.2.3.0.0\lib\net45\Orleans.IoC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
