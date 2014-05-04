@@ -24,17 +24,24 @@ namespace Orleans.Bus
         [Test]
         public async void When_subscribed()
         {
-            await bus.Subscribe<TextPublished>(11, observer);
-            await bus.Send(11, new PublishText("sub"));
+            const int grainId = 11;
+
+            await bus.Subscribe<TextPublished>(grainId, observer);
+            await bus.Send(grainId, new PublishText("sub"));
             
-            client.EventReceived.WaitOne(TimeSpan.FromSeconds(10));
+            client.EventReceived
+                  .WaitOne(TimeSpan.FromSeconds(2));
+            
             Assert.AreEqual("sub", client.PublishedText);
+            Assert.AreEqual(grainId, client.SenderId);
         }
     }
 
     public class TestClient : Observes
     {
         public readonly EventWaitHandle EventReceived = new ManualResetEvent(false);
+
+        public long SenderId = -1;
         public string PublishedText = "";
 
         public void On(object sender, object e)
@@ -44,6 +51,7 @@ namespace Orleans.Bus
 
         void On(long sender, TextPublished e)
         {
+            SenderId = sender;
             PublishedText = e.Text;
             EventReceived.Set();
         }
