@@ -66,8 +66,9 @@ static Func<string> ArchiveFile = () => OutputPath + @"\{Version()}.zip";
 /// </summary>
 [Task] public static void Standalone(string description = null, bool beta = false)
 {
-	string release = CreateRelease(description, beta);
+	Zip();
 
+	string release = CreateRelease(description, beta);
 	Upload(release, ArchiveFile(), "application/zip");
 }
 
