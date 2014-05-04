@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("Orleans.Bus")]
+[assembly: AssemblyTitle("Orleans.Bus-alpha")]
 [assembly: AssemblyCopyright("Copyright © Yevhen Bobrov 2014")]
 
 [assembly: ComVisible(false)]

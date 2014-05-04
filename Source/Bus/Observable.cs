@@ -109,7 +109,7 @@ namespace Orleans.Bus
                 {
                     observer.On(sender, @event);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     failed.Add(observer);
                 }
