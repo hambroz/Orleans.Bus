@@ -29,7 +29,7 @@ static string PackagePath = @"{OutputPath}\Package";
 static string DebugOutputPath = @"{PackagePath}\Debug";
 static string ReleaseOutputPath = @"{PackagePath}\Release";
 
-static Func<string> PackageFile = () => PackagePath + @"\Orleans.IoC.{Version()}.nupkg";
+static Func<string> PackageFile = () => PackagePath + @"\{Project}.{Version()}.nupkg";
 static Func<string> ArchiveFile = () => OutputPath + @"\{Version()}.zip";
 
 /// <summary> 
