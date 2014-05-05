@@ -53,24 +53,32 @@ namespace Orleans.Bus
             Assert.NotNull(references.Get<ITestGrainWithStringId>(id));
         }
 
+// TODO: move everything related to identity checking to Bus
+/*
+
+           if (!@interface.GetCustomAttributes(typeof(ExtendedPrimaryKeyAttribute), true).Any())
+                throw new MissingExtendedPrimaryKeyAttributeException(@interface);
+ 
         [Test]
         public void Getting_reference_by_string_with_missing_extended_primary_key_attribute()
         {
             Assert.Throws<GrainReferenceService.MissingExtendedPrimaryKeyAttributeException>(() =>
                 references.Get<ITestGrainWithMissingExtendedPrimaryKeyAttribute>("some-id-missing-EPK-attribute"));
         }
-
-        [Test]
-        public void Getting_reference_by_class_type_instead_of_interface()
+ 
+        [Serializable]
+        internal class MissingExtendedPrimaryKeyAttributeException : ApplicationException
         {
-            Assert.Throws<GrainReferenceService.AccessByClassTypeException>(() =>
-                references.Get<TestGrainWithInt64Id>(1));
+            const string message = "Can't get {0} by string id. Make sure that interface is marked with [ExtendedPrimaryKey] attribute.";
 
-            Assert.Throws<GrainReferenceService.AccessByClassTypeException>(() =>
-                references.Get<TestGrainWithGuidId>(Guid.NewGuid()));
+            internal MissingExtendedPrimaryKeyAttributeException(Type grainType)
+                : base(string.Format(message, grainType))
+            {}
 
-            Assert.Throws<GrainReferenceService.AccessByClassTypeException>(() =>
-                references.Get<TestGrainWithStringId>("some-id"));
+            protected MissingExtendedPrimaryKeyAttributeException(SerializationInfo info, StreamingContext context)
+                : base(info, context)
+            {}
         }
+*/
     }
 }

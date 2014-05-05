@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -88,90 +89,30 @@ namespace Orleans.Bus
         public IHaveGuidId Get(Type @interface, Guid id)
         {
             var invoker = getByGuidFactoryMethods.Find(@interface);
+            Debug.Assert(invoker != null);
 
-            if (invoker != null)
-                return (IHaveGuidId)invoker.Invoke(null, id);
-
-            if (!@interface.IsInterface)
-                throw new AccessByClassTypeException(@interface);
-
-            throw new FactoryMethodNotFoundException(@interface);
+            return (IHaveGuidId)invoker.Invoke(null, id);
         }
 
         public IHaveInt64Id Get(Type @interface, long id)
         {
             var invoker = getByLongFactoryMethods.Find(@interface);
+            Debug.Assert(invoker != null);
 
-            if (invoker != null)
-                return (IHaveInt64Id)invoker.Invoke(null, id);
-
-            if (!@interface.IsInterface)
-                throw new AccessByClassTypeException(@interface);
-
-            throw new FactoryMethodNotFoundException(@interface);
+            return (IHaveInt64Id)invoker.Invoke(null, id);
         }
 
         public IHaveStringId Get(Type @interface, string id)
         {
             var invoker = getByStringFactoryMethods.Find(@interface);
-
-            if (invoker != null)
-                return (IHaveStringId)invoker.Invoke(null, 0L, id);
-
-            if (!@interface.IsInterface)
-                throw new AccessByClassTypeException(@interface);
-
-            if (!@interface.GetCustomAttributes(typeof(ExtendedPrimaryKeyAttribute), true).Any())
-                throw new MissingExtendedPrimaryKeyAttributeException(@interface);
-
-            throw new FactoryMethodNotFoundException(@interface);
+            Debug.Assert(invoker != null);
+            
+            return (IHaveStringId)invoker.Invoke(null, 0L, id);
         }
 
         public IEnumerable<Type> RegisteredGrainTypes()
         {
             return castFactoryMethods.Keys;
-        }
-
-        [Serializable]
-        internal class FactoryMethodNotFoundException : ApplicationException
-        {
-            const string message = "Can't find factory method for {0}. Factory class was not found during initial scan.";
-
-            internal FactoryMethodNotFoundException(Type grainType)
-                : base(string.Format(message, grainType))
-            {}
-
-            protected FactoryMethodNotFoundException(SerializationInfo info, StreamingContext context)
-                : base(info, context)
-            {}
-        }
-
-        [Serializable]
-        internal class AccessByClassTypeException : ApplicationException
-        {
-            const string message = "Can't get reference by class type {0}. Use original interface instead.";
-
-            internal AccessByClassTypeException(Type grainType)
-                : base(string.Format(message, grainType))
-            {}
-
-            protected AccessByClassTypeException(SerializationInfo info, StreamingContext context)
-                : base(info, context)
-            {}
-        }
-
-        [Serializable]
-        internal class MissingExtendedPrimaryKeyAttributeException : ApplicationException
-        {
-            const string message = "Can't get {0} by string id. Make sure that interface is marked with [ExtendedPrimaryKey] attribute.";
-
-            internal MissingExtendedPrimaryKeyAttributeException(Type grainType)
-                : base(string.Format(message, grainType))
-            {}
-
-            protected MissingExtendedPrimaryKeyAttributeException(SerializationInfo info, StreamingContext context)
-                : base(info, context)
-            {}
-        }
+        }  
     }
 }
