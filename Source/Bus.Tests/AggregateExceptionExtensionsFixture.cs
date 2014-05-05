@@ -8,7 +8,7 @@ namespace Orleans.Bus
     [TestFixture]
     public class AggregateExceptionExtensionsFixture
     {
-        IGrainRuntime service;
+        GrainReferenceService service;
 
         ITestGrain1 grain1;
         ITestGrain2 grain2;
@@ -17,11 +17,11 @@ namespace Orleans.Bus
         [SetUp]
         public void SetUp()
         {
-            service = GrainRuntime.Instance;
+            service = GrainReferenceService.Instance;
 
-            grain1 = service.Reference<ITestGrain1>(1);
-            grain2 = service.Reference<ITestGrain2>(2);
-            grain3 = service.Reference<ITestGrain3>(3);
+            grain1 = service.Get<ITestGrain1>(1);
+            grain2 = service.Get<ITestGrain2>(2);
+            grain3 = service.Get<ITestGrain3>(3);
         }
 
         [Test]

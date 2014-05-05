@@ -8,89 +8,27 @@ using Fasterflect;
 
 namespace Orleans.Bus
 {
-    /// <summary>
-    /// Grain observer reference fosr external client, that could be used for subscribing to grain notifications
-    /// </summary>
-    /// <typeparam name="TGrainObserver">Type that implements <see cref="IGrainObserver"/> interface</typeparam>
-    [Serializable]
-    public sealed class ObserverReference<TGrainObserver> 
-        where TGrainObserver : IGrainObserver
+    class ObserverReference<TGrainObserver> where TGrainObserver : IGrainObserver
     {
-        /// <summary>
-        /// Actual  proxy grain used to deliver notifications to the client
-        /// </summary>
         public readonly TGrainObserver Proxy;
 
-        /// <summary>
-        /// For internal use only!
-        /// </summary>
-        /// <param name="proxy">For internal use only!</param>
         public ObserverReference(TGrainObserver proxy)
         {
             Proxy = proxy;
         }
     }
 
-    /// <summary>
-    /// Provides services to obtain observer references for clients (those who don't implement <see cref="IGrain"/> interface)
-    /// </summary>
-    /// <remarks>
-    /// Cast client reference to original observer interface 
-    /// before passing it to any of this service generic methods!
-    /// </remarks>
-    public interface IGrainObserverReferenceService
+    class GrainObserverService
     {
-        /// <summary>
-        /// Creates observer reference for given client, which could be used for subscribing to grain notifications
-        /// </summary>
-        /// <param name="client">Client which implements <typeparamref name="TGrainObserver"/> interface </param>
-        /// <typeparam name="TGrainObserver">Type which implements <see cref="IGrainObserver"/> interface</typeparam>
-        /// <returns>Task with observer reference which could be used for subscribing to grain notifications</returns>
-        Task<ObserverReference<TGrainObserver>> CreateObserverReference<TGrainObserver>(TGrainObserver client) 
-            where TGrainObserver : IGrainObserver;
+        public static readonly GrainObserverService Instance = new GrainObserverService().Initialize();
 
-        /// <summary>
-        /// Deletes previously created observer reference for given client
-        /// </summary>
-        /// <param name="reference">Previously obtained observer reference </param>
-        /// <typeparam name="TGrainObserver">Type which implements <see cref="IGrainObserver"/> interface</typeparam>
-        void DeleteObserverReference<TGrainObserver>(ObserverReference<TGrainObserver> reference) 
-            where TGrainObserver : IGrainObserver;
-
-        /// <summary>
-        /// Creates observer reference for given client, which could be used for subscribing to grain notifications
-        /// </summary>
-        /// <param name="interface">Actual type of observer interface</param>
-        /// <param name="client">Client which implements <paramref name="interface"/> interface </param>
-        /// <returns>Task with observer reference which could be used for subscribing to grain notifications</returns>
-        Task<ObserverReference<IGrainObserver>> CreateObserverReference(Type @interface, IGrainObserver client);
-
-        /// <summary>
-        /// Deletes previously created observer reference for given client
-        /// </summary>
-        /// <param name="interface">Actual type of observer interface</param>
-        /// <param name="reference">Previously obtained observer reference </param>
-        void DeleteObserverReference(Type @interface, ObserverReference<IGrainObserver> reference);
-
-        /// <summary>
-        /// Returns all grain observer interface types registered within current runtime
-        /// </summary>
-        /// <returns>List of <seealso cref="Type"/> which represent grain observer interface types</returns>
-        IEnumerable<Type> RegisteredGrainObserverTypes();
-    }
-
-    public sealed partial class GrainRuntime
-    {
-        /// <summary>
-        /// Globally accessible instance of  the <see cref="IGrainObserverReferenceService"/>.
-        /// </summary>
-        /// <remarks>
-        /// Could be substituted within a test harness
-        /// </remarks>
         readonly IDictionary<Type, MethodInvoker> createObjectReferenceFactoryMethods = new Dictionary<Type, MethodInvoker>();
         readonly IDictionary<Type, MethodInvoker> deleteObjectReferenceFactoryMethods = new Dictionary<Type, MethodInvoker>();
 
-        void InitializeObserverReferenceService()
+        GrainObserverService()
+        {}
+
+        GrainObserverService Initialize()
         {
             var bindings = OrleansStaticFactories.WhereProduct(IsGrainObserver);
 
@@ -99,6 +37,8 @@ namespace Orleans.Bus
                 BindCreateObjectReference(binding);
                 BindDeleteObjectReference(binding);
             }
+
+            return this;
         }
 
         static bool IsGrainObserver(Type type)
@@ -119,7 +59,7 @@ namespace Orleans.Bus
                 binding.FactoryMethodInvoker("DeleteObjectReference", binding.Product);
         }
 
-        async Task<ObserverReference<TGrainObserver>> IGrainObserverReferenceService.CreateObserverReference<TGrainObserver>(TGrainObserver client)
+        public async Task<ObserverReference<TGrainObserver>> Create<TGrainObserver>(TGrainObserver client) where TGrainObserver : IGrainObserver
         {
             var invoker = createObjectReferenceFactoryMethods.Find(typeof(TGrainObserver));
 
@@ -129,7 +69,7 @@ namespace Orleans.Bus
             return new ObserverReference<TGrainObserver>(await (Task<TGrainObserver>)invoker.Invoke(null, client));
         }
 
-        void IGrainObserverReferenceService.DeleteObserverReference<TGrainObserver>(ObserverReference<TGrainObserver> reference)
+        public void Delete<TGrainObserver>(ObserverReference<TGrainObserver> reference) where TGrainObserver : IGrainObserver
         {
             var invoker = deleteObjectReferenceFactoryMethods.Find(typeof(TGrainObserver));
 
@@ -139,7 +79,7 @@ namespace Orleans.Bus
             invoker.Invoke(null, reference.Proxy);
         }
 
-        async Task<ObserverReference<IGrainObserver>> IGrainObserverReferenceService.CreateObserverReference(Type @interface, IGrainObserver client)
+        public async Task<ObserverReference<IGrainObserver>> Create(Type @interface, IGrainObserver client)
         {
             var invoker = createObjectReferenceFactoryMethods.Find(@interface);
 
@@ -152,7 +92,7 @@ namespace Orleans.Bus
             return new ObserverReference<IGrainObserver>((IGrainObserver)task.GetPropertyValue("Result"));
         }
 
-        void IGrainObserverReferenceService.DeleteObserverReference(Type @interface, ObserverReference<IGrainObserver> reference)
+        public void Delete(Type @interface, ObserverReference<IGrainObserver> reference)
         {
             var invoker = deleteObjectReferenceFactoryMethods.Find(@interface);
 
@@ -162,7 +102,7 @@ namespace Orleans.Bus
             invoker.Invoke(null, reference.Proxy);
         }
 
-        IEnumerable<Type> IGrainObserverReferenceService.RegisteredGrainObserverTypes()
+        public IEnumerable<Type> RegisteredGrainObserverTypes()
         {
             return createObjectReferenceFactoryMethods.Keys;
         }

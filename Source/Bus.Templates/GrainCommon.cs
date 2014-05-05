@@ -1,9 +1,4 @@
 ﻿        /// <summary>
-        /// An instance of <see cref="IGrainRuntime"/> pointing to global instance by default
-        /// </summary>
-        public IGrainRuntime Runtime = GrainRuntime.Instance;
-
-        /// <summary>
         /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
         /// </summary>
         public IMessageBus Bus = MessageBus.Instance;
@@ -11,6 +6,11 @@
         /// <summary>
         /// A mockabe instance of this grain. You can substitute it within a test harness
         /// </summary>
+        /// <remarks>
+        /// WARNING! This will work only if DEBUG constant is defined for build.
+        /// In RELEASE mode all magic will gone, and original GrainBase methods 
+        /// will be bound by the comiler
+        /// </remarks>
         public IGrainInstance Instance;
 
         /// <summary>

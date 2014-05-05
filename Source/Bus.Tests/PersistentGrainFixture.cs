@@ -13,9 +13,9 @@ namespace Orleans.Bus
         [Test]
         public async void Should_return_grain_state_when_state_is_not_set_explicitly()
         {
-            var service = GrainRuntime.Instance;
+            var references = GrainReferenceService.Instance;
             
-            var grain = service.Reference<ITestPersistentGrain>(Guid.NewGuid());
+            var grain = references.Get<ITestPersistentGrain>(Guid.NewGuid());
             await grain.SetData("test");
             
             Assert.AreEqual("test", await grain.GetData());

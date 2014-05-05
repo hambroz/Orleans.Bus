@@ -8,12 +8,14 @@ namespace Orleans.Bus
     [TestFixture]
     public class GrainObserverReferenceServiceFixture
     {
-        IGrainRuntime runtime;
+        GrainReferenceService references;
+        GrainObserverService observers;
 
         [SetUp]
         public void SetUp()
         {
-            runtime = GrainRuntime.Instance;
+            references = GrainReferenceService.Instance;
+            observers = GrainObserverService.Instance;
         }
 
         [Test]
@@ -21,8 +23,8 @@ namespace Orleans.Bus
         {
             ITestGrainObserver client = new TestClient();
 
-            var observable = runtime.Reference<ITestObservableGrain>(Guid.NewGuid());
-            var observer = await runtime.CreateObserverReference(client);
+            var observable = references.Get<ITestObservableGrain>(Guid.NewGuid());
+            var observer = await observers.Create(client);
 
             Assert.DoesNotThrow(
                 async ()=> await observable.Subscribe(observer.Proxy));
@@ -33,8 +35,8 @@ namespace Orleans.Bus
         {
             var client = new TestClient();
 
-            Assert.Throws<GrainRuntime.ObserverFactoryMethodNotFoundException>(
-                async () => await runtime.CreateObserverReference(client));
+            Assert.Throws<GrainObserverService.ObserverFactoryMethodNotFoundException>(
+                async () => await observers.Create(client));
         }
 
         [Test]
@@ -42,9 +44,9 @@ namespace Orleans.Bus
         {
             ITestGrainObserver client = new TestClient();
 
-            var observer = await runtime.CreateObserverReference(client);
+            var observer = await observers.Create(client);
 
-            Assert.DoesNotThrow(() => runtime.DeleteObserverReference(observer));
+            Assert.DoesNotThrow(() => observers.Delete(observer));
         }
 
         [Test]
@@ -52,9 +54,9 @@ namespace Orleans.Bus
         {
             var client = new TestClient();
 
-            var observer = await runtime.CreateObserverReference(typeof(ITestGrainObserver), client);
+            var observer = await observers.Create(typeof(ITestGrainObserver), client);
 
-            Assert.DoesNotThrow(() => runtime.DeleteObserverReference(typeof(ITestGrainObserver), observer));
+            Assert.DoesNotThrow(() => observers.Delete(typeof(ITestGrainObserver), observer));
         }
 
         class TestClient : ITestGrainObserver

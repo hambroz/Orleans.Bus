@@ -12,11 +12,6 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrain : GrainBase, IGrain, IGrainInstance
     {
         /// <summary>
-        /// An instance of <see cref="IGrainRuntime"/> pointing to global instance by default
-        /// </summary>
-        public IGrainRuntime Runtime = GrainRuntime.Instance;
-
-        /// <summary>
         /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
         /// </summary>
         public IMessageBus Bus = MessageBus.Instance;
@@ -24,6 +19,11 @@ namespace Orleans.Bus
         /// <summary>
         /// A mockabe instance of this grain. You can substitute it within a test harness
         /// </summary>
+        /// <remarks>
+        /// WARNING! This will work only if DEBUG constant is defined for build.
+        /// In RELEASE mode all magic will gone, and original GrainBase methods 
+        /// will be bound by the comiler
+        /// </remarks>
         public IGrainInstance Instance;
 
         /// <summary>
@@ -213,11 +213,6 @@ namespace Orleans.Bus
         where TState : class, IGrainState
     {
         /// <summary>
-        /// An instance of <see cref="IGrainRuntime"/> pointing to global instance by default
-        /// </summary>
-        public IGrainRuntime Runtime = GrainRuntime.Instance;
-
-        /// <summary>
         /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
         /// </summary>
         public IMessageBus Bus = MessageBus.Instance;
@@ -225,6 +220,11 @@ namespace Orleans.Bus
         /// <summary>
         /// A mockabe instance of this grain. You can substitute it within a test harness
         /// </summary>
+        /// <remarks>
+        /// WARNING! This will work only if DEBUG constant is defined for build.
+        /// In RELEASE mode all magic will gone, and original GrainBase methods 
+        /// will be bound by the comiler
+        /// </remarks>
         public IGrainInstance Instance;
 
         /// <summary>
@@ -432,7 +432,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -448,7 +448,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -464,7 +464,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -481,7 +481,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -498,7 +498,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -515,7 +515,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -541,6 +541,7 @@ namespace Orleans.Bus
             Observers.Attach(o, e);
             return TaskDone.Done;
         }
+
         /// <summary>
         /// Detaches given observer from receiving events of the specified type 
         /// </summary>
@@ -577,6 +578,7 @@ namespace Orleans.Bus
             Observers.Attach(o, e);
             return TaskDone.Done;
         }
+
         /// <summary>
         /// Detaches given observer from receiving events of the specified type 
         /// </summary>
@@ -596,6 +598,16 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithGuidId : ObservableMessageBasedGrain, IHaveGuidId
     {
         /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="Guid"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Guid Id()
+        {
+            return Identity.Of(this);
+        }
+
+        /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
         /// </summary>
@@ -604,7 +616,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Runtime.Id(this), e);
+            Observers.Notify(Id(), e);
         }
     }
 
@@ -614,23 +626,15 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithInt64Id : ObservableMessageBasedGrain, IHaveInt64Id
     {
         /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
+        /// Gets identifier of the current grain.
         /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
+        /// <returns><see cref="Int64"/> identifier</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
+        protected Int64 Id()
         {
-            Observers.Notify(Runtime.Id(this), e);
+            return Identity.Of(this);
         }
-    }
 
-    /// <summary>
-    /// Base class for observable message based grains identifiable by <see cref="String"/> identifier
-    /// </summary>
-    public abstract class ObservableMessageBasedGrainWithStringId : ObservableMessageBasedGrain, IHaveStringId
-    {
         /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
@@ -640,7 +644,35 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Runtime.Id(this), e);
+            Observers.Notify(Id(), e);
+        }
+    }
+
+    /// <summary>
+    /// Base class for observable message based grains identifiable by <see cref="String"/> identifier
+    /// </summary>
+    public abstract class ObservableMessageBasedGrainWithStringId : ObservableMessageBasedGrain, IHaveStringId
+    {
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="String"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected String Id()
+        {
+            return Identity.Of(this);
+        }
+
+        /// <summary>
+        /// Notifies all attached observers registered for a particular type of event,
+		/// passing given event to each of them.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event</typeparam>
+        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void Notify<TEvent>(TEvent e)
+        {
+            Observers.Notify(Id(), e);
         }
     }
 
@@ -650,6 +682,16 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithGuidId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveGuidId
         where TGrainState : class, IGrainState
     {
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="Guid"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Guid Id()
+        {
+            return Identity.Of(this);
+        }
+
 	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
@@ -659,7 +701,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Runtime.Id(this), e);
+            Observers.Notify(Id(), e);
         }
     }
 
@@ -669,6 +711,16 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithInt64Id<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveInt64Id
         where TGrainState : class, IGrainState
     {
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="Int64"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Int64 Id()
+        {
+            return Identity.Of(this);
+        }
+
 	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
@@ -678,7 +730,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Runtime.Id(this), e);
+            Observers.Notify(Id(), e);
         }
     }
 
@@ -688,6 +740,16 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithStringId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveStringId
         where TGrainState : class, IGrainState
     {
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="String"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected String Id()
+        {
+            return Identity.Of(this);
+        }
+
 	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
@@ -697,7 +759,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Runtime.Id(this), e);
+            Observers.Notify(Id(), e);
         }
     }
 

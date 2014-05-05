@@ -154,7 +154,8 @@ namespace Orleans.Bus
         /// Globally available default instance of <see cref="IMessageBus"/>
         /// </summary>
         public static readonly IMessageBus Instance = 
-           new MessageBus(GrainRuntime.Instance).Initialize();
+            new MessageBus(GrainReferenceService.Instance, GrainObserverService.Instance)
+                .Initialize();
 
         readonly Dictionary<Type, CommandHandler> commands = 
              new Dictionary<Type, CommandHandler>();        
@@ -165,16 +166,18 @@ namespace Orleans.Bus
         readonly Dictionary<Type, EventHandler> events =
              new Dictionary<Type, EventHandler>();
 
-        readonly IGrainRuntime runtime;
+        readonly GrainReferenceService references;
+        readonly GrainObserverService observers;
 
-        MessageBus(IGrainRuntime runtime)
+        MessageBus(GrainReferenceService references, GrainObserverService observers)
         {
-            this.runtime = runtime;
+            this.references = references;
+            this.observers = observers;
         }
 
         MessageBus Initialize()
         {
-            foreach (var grain in runtime.RegisteredGrainTypes())
+            foreach (var grain in references.RegisteredGrainTypes())
             {
                 Register(grain);                
             }
@@ -230,17 +233,17 @@ namespace Orleans.Bus
 
         Task IMessageBus.Send(Guid id, object command)
         {
-            return Send(grain => runtime.Reference(grain, id), command);
+            return Send(grain => references.Get(grain, id), command);
         }
 
         Task IMessageBus.Send(long id, object command)
         {
-            return Send(grain => runtime.Reference(grain, id), command);
+            return Send(grain => references.Get(grain, id), command);
         }
 
         Task IMessageBus.Send(string id, object command)
         {
-            return Send(grain => runtime.Reference(grain, id), command);
+            return Send(grain => references.Get(grain, id), command);
         }
 
         Task Send(Func<Type, object> getReference, object command)
@@ -254,17 +257,17 @@ namespace Orleans.Bus
 
         Task<TResult> IMessageBus.Query<TResult>(Guid id, object query)
         {
-            return Query<TResult>(grain => runtime.Reference(grain, id), query);
+            return Query<TResult>(grain => references.Get(grain, id), query);
         }
 
         Task<TResult> IMessageBus.Query<TResult>(long id, object query)
         {
-            return Query<TResult>(grain => runtime.Reference(grain, id), query);
+            return Query<TResult>(grain => references.Get(grain, id), query);
         }
 
         Task<TResult> IMessageBus.Query<TResult>(string id, object query)
         {
-            return Query<TResult>(grain => runtime.Reference(grain, id), query);
+            return Query<TResult>(grain => references.Get(grain, id), query);
         }
 
         Task<TResult> Query<TResult>(Func<Type, object> getReference, object query)
@@ -278,17 +281,17 @@ namespace Orleans.Bus
 
         Task IMessageBus.Subscribe<TEvent>(Guid id, IObserver observer)
         {
-            return Subscribe<TEvent>(grain => runtime.Reference(grain, id), observer);
+            return Subscribe<TEvent>(grain => references.Get(grain, id), observer);
         }
         
         Task IMessageBus.Subscribe<TEvent>(long id, IObserver observer)
         {
-            return Subscribe<TEvent>(grain => runtime.Reference(grain, id), observer);
+            return Subscribe<TEvent>(grain => references.Get(grain, id), observer);
         }
         
         Task IMessageBus.Subscribe<TEvent>(string id, IObserver observer)
         {
-            return Subscribe<TEvent>(grain => runtime.Reference(grain, id), observer);
+            return Subscribe<TEvent>(grain => references.Get(grain, id), observer);
         }
 
         async Task Subscribe<TEvent>(Func<Type, object> getReference, IObserver observer)
@@ -302,17 +305,17 @@ namespace Orleans.Bus
 
         Task IMessageBus.Unsubscribe<TEvent>(Guid id, IObserver observer)
         {
-            return Unsubscribe<TEvent>(grain => runtime.Reference(grain, id), observer);
+            return Unsubscribe<TEvent>(grain => references.Get(grain, id), observer);
         }        
         
         Task IMessageBus.Unsubscribe<TEvent>(long id, IObserver observer)
         {
-            return Unsubscribe<TEvent>(grain => runtime.Reference(grain, id), observer);
+            return Unsubscribe<TEvent>(grain => references.Get(grain, id), observer);
         }        
         
         Task IMessageBus.Unsubscribe<TEvent>(string id, IObserver observer)
         {
-            return Unsubscribe<TEvent>(grain => runtime.Reference(grain, id), observer);
+            return Unsubscribe<TEvent>(grain => references.Get(grain, id), observer);
         }
 
         async Task Unsubscribe<TEvent>(Func<Type, object> getReference, IObserver observer)
@@ -326,12 +329,12 @@ namespace Orleans.Bus
 
         async Task<IObserver> IMessageBus.CreateObserver(Observes client)
         {
-            return new Observer(await runtime.CreateObserverReference(client));
+            return new Observer(await observers.Create(client));
         }
 
         void IMessageBus.DeleteObserver(IObserver observer)
         {
-            runtime.DeleteObserverReference(observer.GetReference());
+            observers.Delete(observer.GetReference());
         }
     }
 }

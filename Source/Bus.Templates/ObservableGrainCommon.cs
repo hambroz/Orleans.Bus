@@ -15,6 +15,7 @@
             Observers.Attach(o, e);
             return TaskDone.Done;
         }
+
         /// <summary>
         /// Detaches given observer from receiving events of the specified type 
         /// </summary>

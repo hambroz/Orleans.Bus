@@ -56,7 +56,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected <#= id #> Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -75,7 +75,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected <#= id #> Id()
         {
-            return Runtime.Id(this);
+            return Identity.Of(this);
         }
     }
 
@@ -104,6 +104,16 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWith<#= id #>Id : ObservableMessageBasedGrain, IHave<#= id #>Id
     {
         /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="<#= id #>"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected <#= id #> Id()
+        {
+            return Identity.Of(this);
+        }
+
+        /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
         /// </summary>
@@ -112,7 +122,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Runtime.Id(this), e);
+            Observers.Notify(Id(), e);
         }
     }
 
@@ -124,6 +134,16 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWith<#= id #>Id<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHave<#= id #>Id
         where TGrainState : class, IGrainState
     {
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="<#= id #>"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected <#= id #> Id()
+        {
+            return Identity.Of(this);
+        }
+
 	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
@@ -133,7 +153,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Runtime.Id(this), e);
+            Observers.Notify(Id(), e);
         }
     }
 

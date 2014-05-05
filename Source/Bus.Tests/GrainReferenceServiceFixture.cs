@@ -8,12 +8,12 @@ namespace Orleans.Bus
     [TestFixture]
     public class GrainReferenceServiceFixture
     {
-        IGrainRuntime runtime;
+        GrainReferenceService references;
 
         [SetUp]
         public void SetUp()
         {
-            runtime = GrainRuntime.Instance;
+            references = GrainReferenceService.Instance;
         }
         
         [Test]
@@ -24,7 +24,7 @@ namespace Orleans.Bus
             var grain = TestGrainWithGuidIdFactory.GetGrain(id);
             Assert.AreEqual(id, grain.GetPrimaryKey());
             
-            Assert.NotNull(runtime.Reference<ITestGrainWithGuidId>(id));
+            Assert.NotNull(references.Get<ITestGrainWithGuidId>(id));
         }
 
         [Test]
@@ -35,7 +35,7 @@ namespace Orleans.Bus
             var grain = TestGrainWithInt64IdFactory.GetGrain(id);
             Assert.AreEqual(id, grain.GetPrimaryKeyLong());
 
-            Assert.NotNull(runtime.Reference<ITestGrainWithInt64Id>(id));
+            Assert.NotNull(references.Get<ITestGrainWithInt64Id>(id));
         }
 
         [Test]
@@ -50,27 +50,27 @@ namespace Orleans.Bus
             Assert.AreEqual(0, longId);
             Assert.AreEqual(id, returnedId);
 
-            Assert.NotNull(runtime.Reference<ITestGrainWithStringId>(id));
+            Assert.NotNull(references.Get<ITestGrainWithStringId>(id));
         }
 
         [Test]
         public void Getting_reference_by_string_with_missing_extended_primary_key_attribute()
         {
-            Assert.Throws<GrainRuntime.MissingExtendedPrimaryKeyAttributeException>(() =>
-                runtime.Reference<ITestGrainWithMissingExtendedPrimaryKeyAttribute>("some-id-missing-EPK-attribute"));
+            Assert.Throws<GrainReferenceService.MissingExtendedPrimaryKeyAttributeException>(() =>
+                references.Get<ITestGrainWithMissingExtendedPrimaryKeyAttribute>("some-id-missing-EPK-attribute"));
         }
 
         [Test]
         public void Getting_reference_by_class_type_instead_of_interface()
         {
-            Assert.Throws<GrainRuntime.AccessByClassTypeException>(() =>
-                runtime.Reference<TestGrainWithInt64Id>(1));
+            Assert.Throws<GrainReferenceService.AccessByClassTypeException>(() =>
+                references.Get<TestGrainWithInt64Id>(1));
 
-            Assert.Throws<GrainRuntime.AccessByClassTypeException>(() =>
-                runtime.Reference<TestGrainWithGuidId>(Guid.NewGuid()));
+            Assert.Throws<GrainReferenceService.AccessByClassTypeException>(() =>
+                references.Get<TestGrainWithGuidId>(Guid.NewGuid()));
 
-            Assert.Throws<GrainRuntime.AccessByClassTypeException>(() =>
-                runtime.Reference<TestGrainWithStringId>("some-id"));
+            Assert.Throws<GrainReferenceService.AccessByClassTypeException>(() =>
+                references.Get<TestGrainWithStringId>("some-id"));
         }
     }
 }
