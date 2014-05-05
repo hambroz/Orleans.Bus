@@ -565,19 +565,30 @@ namespace Orleans.Bus
         }
 
         #endregion
-        
-		TState explicitState;
 
-        /// <summary>
-        /// Gets or sets grain's state
+		/// <summary>
+        /// Sets grain's state for testing purposes
         /// </summary>
-        /// <remarks>You can use setter for testing purposes</remarks>
-        public new TState State
+        public void SetState(TState state)
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+			#if DEBUG
+			explicitState = state;
+			#endif
+		}
+		        
+		#if DEBUG
+		
+		TState explicitState;
+       
+		/// <summary>
+        /// Gets grain's state
+        /// </summary>
+        protected new TState State
+        {
             get { return explicitState ?? base.State; }
-            set { explicitState = value; }
         }
+
+		#endif
 	}
 
     /// <summary>
@@ -585,6 +596,20 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrainWithGuidId : MessageBasedGrain, IHaveGuidId
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Guid id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Guid? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -592,7 +617,11 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
     }
 
@@ -601,6 +630,20 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrainWithInt64Id : MessageBasedGrain, IHaveInt64Id
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Int64 id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Int64? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -608,7 +651,11 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
     }
 
@@ -617,6 +664,20 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrainWithStringId : MessageBasedGrain, IHaveStringId
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(String id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		String explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -624,7 +685,11 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
     }
 
@@ -634,6 +699,20 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrainWithGuidId<TState> : MessageBasedGrain<TState>, IHaveGuidId
 	        where TState : class, IGrainState
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Guid id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Guid? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -641,8 +720,13 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
+		
     }
 
     /// <summary>
@@ -651,6 +735,20 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrainWithInt64Id<TState> : MessageBasedGrain<TState>, IHaveInt64Id
 	        where TState : class, IGrainState
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Int64 id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Int64? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -658,8 +756,13 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
+		
     }
 
     /// <summary>
@@ -668,6 +771,20 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrainWithStringId<TState> : MessageBasedGrain<TState>, IHaveStringId
 	        where TState : class, IGrainState
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(String id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		String explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -675,11 +792,16 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
+		
     }
 
-    /// <summary>
+	/// <summary>
     /// Base class for all kinds of observable message based grains
     /// </summary>
     public abstract class ObservableMessageBasedGrain : MessageBasedGrain, IObservableGrain
@@ -761,6 +883,20 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class ObservableMessageBasedGrainWithGuidId : ObservableMessageBasedGrain, IHaveGuidId
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Guid id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Guid? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -768,10 +904,14 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
 
-        /// <summary>
+	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
         /// </summary>
@@ -782,6 +922,7 @@ namespace Orleans.Bus
         {
             Observers.Notify(Id(), e);
         }
+		
     }
 
     /// <summary>
@@ -789,6 +930,20 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class ObservableMessageBasedGrainWithInt64Id : ObservableMessageBasedGrain, IHaveInt64Id
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Int64 id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Int64? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -796,10 +951,14 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
 
-        /// <summary>
+	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
         /// </summary>
@@ -810,6 +969,7 @@ namespace Orleans.Bus
         {
             Observers.Notify(Id(), e);
         }
+		
     }
 
     /// <summary>
@@ -817,6 +977,20 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class ObservableMessageBasedGrainWithStringId : ObservableMessageBasedGrain, IHaveStringId
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(String id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		String explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -824,10 +998,14 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
 
-        /// <summary>
+	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
 		/// passing given event to each of them.
         /// </summary>
@@ -838,6 +1016,7 @@ namespace Orleans.Bus
         {
             Observers.Notify(Id(), e);
         }
+		
     }
 
     /// <summary>
@@ -846,6 +1025,20 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithGuidId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveGuidId
         where TGrainState : class, IGrainState
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Guid id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Guid? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -853,7 +1046,11 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
 
 	    /// <summary>
@@ -867,7 +1064,7 @@ namespace Orleans.Bus
         {
             Observers.Notify(Id(), e);
         }
-    }
+	}
 
     /// <summary>
     /// Base class for persistent observable message based grains identifiable by <see cref="Int64"/> identifier
@@ -875,6 +1072,20 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithInt64Id<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveInt64Id
         where TGrainState : class, IGrainState
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(Int64 id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		Int64? explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -882,7 +1093,11 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
 
 	    /// <summary>
@@ -896,7 +1111,7 @@ namespace Orleans.Bus
         {
             Observers.Notify(Id(), e);
         }
-    }
+	}
 
     /// <summary>
     /// Base class for persistent observable message based grains identifiable by <see cref="String"/> identifier
@@ -904,6 +1119,20 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithStringId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveStringId
         where TGrainState : class, IGrainState
     {
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(String id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		String explicitId;       	
+		#endif
+
         /// <summary>
         /// Gets identifier of the current grain.
         /// </summary>
@@ -911,7 +1140,11 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-            return Identity.Of(this);
+			#if DEBUG
+			return explicitId != null ? explicitId : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
         }
 
 	    /// <summary>
@@ -925,7 +1158,7 @@ namespace Orleans.Bus
         {
             Observers.Notify(Id(), e);
         }
-    }
+	}
 
     /// <summary>
     /// This interface exists solely for unit testing purposes

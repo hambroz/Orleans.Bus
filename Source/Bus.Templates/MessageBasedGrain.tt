@@ -27,19 +27,30 @@ namespace Orleans.Bus
         where TState : class, IGrainState
     {
 <#@ include file="GrainCommon.cs" #>
-        
-		TState explicitState;
 
-        /// <summary>
-        /// Gets or sets grain's state
+		/// <summary>
+        /// Sets grain's state for testing purposes
         /// </summary>
-        /// <remarks>You can use setter for testing purposes</remarks>
-        public new TState State
+        public void SetState(TState state)
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+			#if DEBUG
+			explicitState = state;
+			#endif
+		}
+		        
+		#if DEBUG
+		
+		TState explicitState;
+       
+		/// <summary>
+        /// Gets grain's state
+        /// </summary>
+        protected new TState State
+        {
             get { return explicitState ?? base.State; }
-            set { explicitState = value; }
         }
+
+		#endif
 	}
 
 <#string[] ids = new string[]{"Guid", "Int64", "String"};#>
@@ -49,15 +60,7 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrainWith<#= id #>Id : MessageBasedGrain, IHave<#= id #>Id
     {
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="<#= id #>"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected <#= id #> Id()
-        {
-            return Identity.Of(this);
-        }
+<# WriteIdBlock(id); #>
     }
 
 <#}#>
@@ -68,19 +71,11 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrainWith<#= id #>Id<TState> : MessageBasedGrain<TState>, IHave<#= id #>Id
 	        where TState : class, IGrainState
     {
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="<#= id #>"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected <#= id #> Id()
-        {
-            return Identity.Of(this);
-        }
+<# WriteIdBlock(id); #>		
     }
 
 <#}#>
-    /// <summary>
+	/// <summary>
     /// Base class for all kinds of observable message based grains
     /// </summary>
     public abstract class ObservableMessageBasedGrain : MessageBasedGrain, IObservableGrain
@@ -103,27 +98,7 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class ObservableMessageBasedGrainWith<#= id #>Id : ObservableMessageBasedGrain, IHave<#= id #>Id
     {
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="<#= id #>"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected <#= id #> Id()
-        {
-            return Identity.Of(this);
-        }
-
-        /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
-        {
-            Observers.Notify(Id(), e);
-        }
+<# WriteObservableBlock(id); #>		
     }
 
 <#}#>
@@ -134,28 +109,8 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWith<#= id #>Id<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHave<#= id #>Id
         where TGrainState : class, IGrainState
     {
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="<#= id #>"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected <#= id #> Id()
-        {
-            return Identity.Of(this);
-        }
-
-	    /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
-        {
-            Observers.Notify(Id(), e);
-        }
-    }
+<# WriteObservableBlock(id); #>
+	}
 
 <#}#>
     /// <summary>
@@ -271,3 +226,60 @@ namespace Orleans.Bus
         void DelayDeactivation(TimeSpan timeSpan);
     }
 }
+<#+
+private void WriteIdBlock(string id)
+{#>
+		/// <summary>
+        /// Sets grain's id for testing purposes
+        /// </summary>
+        public void SetId(<#= id #> id)
+        {
+			#if DEBUG
+			explicitId = id;
+			#endif
+		}
+		        
+		#if DEBUG
+		<#= id != "String" ? id + "?" : "String" #> explicitId;       	
+		#endif
+
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns><see cref="<#= id #>"/> identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected <#= id #> Id()
+        {
+			#if DEBUG
+			return explicitId != null ? <#= id != "String" ? "explicitId.Value" : "explicitId" #> : Identity.Of(this);
+			#else
+			return Identity.Of(this);
+			#endif
+        }
+<#+
+}
+#>
+<#+
+private void WriteNotifyBlock()
+{#>
+	    /// <summary>
+        /// Notifies all attached observers registered for a particular type of event,
+		/// passing given event to each of them.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event</typeparam>
+        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void Notify<TEvent>(TEvent e)
+        {
+            Observers.Notify(Id(), e);
+        }
+<#+
+}
+#>
+<#+private void WriteObservableBlock(string id)
+{
+	WriteIdBlock(id);
+	WriteLine("");
+	WriteNotifyBlock();
+}
+#>

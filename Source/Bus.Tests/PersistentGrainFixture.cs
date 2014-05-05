@@ -25,8 +25,10 @@ namespace Orleans.Bus
         public async void Should_return_explicit_state_when_set()
         {
             var state = new MockState { Data = "test"};
-            
-            var grain = new TestPersistentGrain {State = state};
+
+            var grain = new TestPersistentGrain();
+            grain.SetState(state);
+
             Assert.AreEqual("test", await grain.GetData());
 
             await grain.SetData("changed");

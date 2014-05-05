@@ -39,20 +39,21 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MessageBasedGrain.cs">
+      <DependentUpon>MessageBasedGrain.tt</DependentUpon>
+      <SubType>Code</SubType>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="GrainCommon.cs">
       <LastGenOutput>GrainCommon1.cs</LastGenOutput>
     </None>
-    <Compile Include="MessageBasedGrain.cs">
-      <DependentUpon>MessageBasedGrain.tt</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <None Include="ObservableGrainCommon.cs" />
     <None Include="MessageBasedGrain.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>MessageBasedGrain.cs</LastGenOutput>
     </None>
+    <None Include="ObservableGrainCommon.cs" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
