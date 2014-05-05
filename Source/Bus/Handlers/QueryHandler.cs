@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -24,29 +25,40 @@ namespace Orleans.Bus
             Query = query;
         }
 
-        public static QueryHandler Create(Type grain, MethodInfo handler)
+        public static QueryHandler Create(Type grain, MethodInfo method)
         {
-            var queryType = handler.GetParameters()[0].ParameterType;
-            var resultType = handler.ReturnType.GetGenericArguments()[0];
+            var query = method.GetParameters()[0].ParameterType;
+            var result = method.ReturnType.GetGenericArguments()[0];
 
-            var queryHandler = typeof(QueryHandler<>).MakeGenericType(resultType);
-            return (QueryHandler)Activator.CreateInstance(queryHandler, new object[] { grain, queryType, handler });
+            var handler = typeof(QueryHandler<,>).MakeGenericType(query, result);
+            return (QueryHandler)Activator.CreateInstance(handler, new object[] { grain, method });
         }
     }
 
-    class QueryHandler<TResult> : QueryHandler
+    class QueryHandler<TQuery, TResult> : QueryHandler
     {
-        readonly MethodInfo handler;
+        readonly Func<object, TQuery, Task<TResult>> invoker;
 
-        public QueryHandler(Type grain, Type query, MethodInfo handler)
-            : base(grain, query)
+        public QueryHandler(Type grain, MethodInfo method)
+            : base(grain, typeof(TQuery))
         {
-            this.handler = handler;
+            invoker = Bind(grain, method);
         }
 
-        public Task<TResult> Handle(object grain, object query)
+        public Task<TResult> Handle(object grain, TQuery query)
         {
-            return (Task<TResult>)handler.Invoke(grain, new[] { query });
+            return invoker(grain, query);
+        }
+
+        static Func<object, TQuery, Task<TResult>> Bind(Type grain, MethodInfo method)
+        {
+            var target = Expression.Parameter(typeof(object), "target");
+            var query = Expression.Parameter(typeof(TQuery), "query");
+
+            var call = Expression.Call(Expression.Convert(target, grain), method, new Expression[] { query });
+            var lambda = Expression.Lambda<Func<object, TQuery, Task<TResult>>>(call, target, query);
+
+            return lambda.Compile();
         }
     }
 }

@@ -25,7 +25,7 @@ namespace Orleans.Bus
         {
             await bus.Send(1, new DoFoo("foo"));
 
-            var result = await bus.Query<string>(1, new GetFoo());
+            var result = await bus.Query<GetFoo, string>(1, new GetFoo());
             Assert.AreEqual("foo-1", result);
         }  
     }

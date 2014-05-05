@@ -20,54 +20,60 @@ namespace Orleans.Bus
         /// <summary>
         /// Sends command message to a grain with the given <see cref="Guid"/> id
         /// </summary>
+        /// <typeparam name="TCommand">The type of command mesage</typeparam>
         /// <param name="id">Id of a grain</param>
         /// <param name="command">The command to send</param>
         /// <returns>Promise</returns>
-        Task Send(Guid id, object command);
+        Task Send<TCommand>(Guid id, TCommand command);
         
         /// <summary>
         /// Sends command message to a grain with the given <see cref="Int64"/> id
         /// </summary>
+        /// <typeparam name="TCommand">The type of command mesage</typeparam>
         /// <param name="id">Id of a grain</param>
         /// <param name="command">The command to send</param>
         /// <returns>Promise</returns>
-        Task Send(long id, object command);
+        Task Send<TCommand>(long id, TCommand command);
         
         /// <summary>
         /// Sends command message to a grain with the given <see cref="string"/> id
         /// </summary>
+        /// <typeparam name="TCommand">The type of command mesage</typeparam>
         /// <param name="id">Id of a grain</param>
         /// <param name="command">The command to send</param>
         /// <returns>Promise</returns>
-        Task Send(string id, object command);
+        Task Send<TCommand>(string id, TCommand command);
 
         /// <summary>
         /// Sends query message to a grain with the given  <see cref="Guid"/> id and casts result to the specified type
         /// </summary>
+        /// <typeparam name="TQuery">The type of query mesage</typeparam>
         /// <typeparam name="TResult">The type of result</typeparam>
         /// <param name="id">Id of a grain</param>
         /// <param name="query">The query to send</param>
         /// <returns>Promise</returns>
-        Task<TResult> Query<TResult>(Guid id, object query);
+        Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query);
 
         /// <summary>
         /// Sends query message to a grain with the given  <see cref="Int64"/> id
         /// and casts result to the specified type
         /// </summary>
+        /// <typeparam name="TQuery">The type of query mesage</typeparam>
         /// <typeparam name="TResult">The type of result</typeparam>
         /// <param name="id">Id of a grain</param>
         /// <param name="query">The query to send</param>
         /// <returns>Promise</returns>
-        Task<TResult> Query<TResult>(long id, object query);
+        Task<TResult> Query<TQuery, TResult>(long id, TQuery query);
         
         /// <summary>
         /// Sends query message to a grain with the given  <see cref="String"/> id and casts result to the specified type
         /// </summary>
+        /// <typeparam name="TQuery">The type of query mesage</typeparam>
         /// <typeparam name="TResult">The type of result</typeparam>
         /// <param name="id">Id of a grain</param>
         /// <param name="query">The query to send</param>
         /// <returns>Promise</returns>
-        Task<TResult> Query<TResult>(string id, object query);
+        Task<TResult> Query<TQuery, TResult>(string id, TQuery query);
 
         /// <summary>
         /// Subscribes given observer to receive events of the specified type 
@@ -215,7 +221,7 @@ namespace Orleans.Bus
 
         void RegisterCommandHandler(Type grain, MethodInfo method)
         {
-            var handler = new CommandHandler(grain, method);
+            var handler = CommandHandler.Create(grain, method);
             commands.Add(handler.Command, handler);
         }
 
@@ -231,48 +237,48 @@ namespace Orleans.Bus
             events.Add(@event, handler);
         }
 
-        Task IMessageBus.Send(Guid id, object command)
+        Task IMessageBus.Send<TCommand>(Guid id, TCommand command)
         {
             return Send(grain => references.Get(grain, id), command);
         }
 
-        Task IMessageBus.Send(long id, object command)
+        Task IMessageBus.Send<TCommand>(long id, TCommand command)
         {
             return Send(grain => references.Get(grain, id), command);
         }
 
-        Task IMessageBus.Send(string id, object command)
+        Task IMessageBus.Send<TCommand>(string id, TCommand command)
         {
             return Send(grain => references.Get(grain, id), command);
         }
 
-        Task Send(Func<Type, object> getReference, object command)
+        Task Send<TCommand>(Func<Type, object> getReference, TCommand command)
         {
-            var handler = commands[command.GetType()];
+            var handler = (CommandHandler<TCommand>) commands[command.GetType()];
 
             var grain = getReference(handler.Grain);
 
             return handler.Handle(grain, command);            
         }
 
-        Task<TResult> IMessageBus.Query<TResult>(Guid id, object query)
+        Task<TResult> IMessageBus.Query<TQuery, TResult>(Guid id, TQuery query)
         {
-            return Query<TResult>(grain => references.Get(grain, id), query);
+            return Query<TQuery, TResult>(grain => references.Get(grain, id), query);
         }
 
-        Task<TResult> IMessageBus.Query<TResult>(long id, object query)
+        Task<TResult> IMessageBus.Query<TQuery, TResult>(long id, TQuery query)
         {
-            return Query<TResult>(grain => references.Get(grain, id), query);
+            return Query<TQuery, TResult>(grain => references.Get(grain, id), query);
         }
 
-        Task<TResult> IMessageBus.Query<TResult>(string id, object query)
+        Task<TResult> IMessageBus.Query<TQuery, TResult>(string id, TQuery query)
         {
-            return Query<TResult>(grain => references.Get(grain, id), query);
+            return Query<TQuery, TResult>(grain => references.Get(grain, id), query);
         }
 
-        Task<TResult> Query<TResult>(Func<Type, object> getReference, object query)
+        Task<TResult> Query<TQuery, TResult>(Func<Type, object> getReference, TQuery query)
         {
-            var handler = (QueryHandler<TResult>) queries[query.GetType()];
+            var handler = (QueryHandler<TQuery, TResult>) queries[query.GetType()];
 
             var reference = getReference(handler.Grain);
 
