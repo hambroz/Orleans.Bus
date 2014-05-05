@@ -31,9 +31,6 @@
     <DocumentationFile>bin\Release\Orleans.Bus.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Fasterflect">
-      <HintPath>..\..\Packages\fasterflect.2.1.3\lib\net40\Fasterflect.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Orleans">
       <HintPath>$(OrleansSDK)\Binaries\OrleansClient\Orleans.dll</HintPath>
@@ -51,12 +48,13 @@
       <Link>Properties\ProductAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Attributes.cs" />
+    <Compile Include="Extensions\ReflectionExtensions.cs" />
     <Compile Include="Handlers\CommandHandler.cs" />
     <Compile Include="Identity.cs" />
     <Compile Include="MessageBus.cs" />
     <Compile Include="Runtime\GrainObserverService.cs" />
     <Compile Include="Runtime\GrainReferenceService.cs" />
-    <Compile Include="Runtime\OrleansStaticFactories.cs" />
+    <Compile Include="Runtime\GrainFactoryBindings.cs" />
     <Compile Include="Handlers\EventHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Handlers\QueryHandler.cs" />

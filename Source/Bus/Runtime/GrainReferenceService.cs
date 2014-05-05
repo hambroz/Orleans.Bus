@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.Serialization;
-
-using Fasterflect;
 
 namespace Orleans.Bus
 {
@@ -12,63 +11,49 @@ namespace Orleans.Bus
     {
         public static readonly GrainReferenceService Instance = new GrainReferenceService().Initialize();
 
-        readonly IDictionary<Type, MethodInvoker> castFactoryMethods = new Dictionary<Type, MethodInvoker>();
-        readonly IDictionary<Type, MethodInvoker> getByGuidFactoryMethods = new Dictionary<Type, MethodInvoker>();
-        readonly IDictionary<Type, MethodInvoker> getByLongFactoryMethods = new Dictionary<Type, MethodInvoker>();
-        readonly IDictionary<Type, MethodInvoker> getByStringFactoryMethods = new Dictionary<Type, MethodInvoker>();
+        readonly IDictionary<Type, ByGuidInvoker> byGuid     = new Dictionary<Type, ByGuidInvoker>();
+        readonly IDictionary<Type, ByInt64Invoker> byInt64   = new Dictionary<Type, ByInt64Invoker>();
+        readonly IDictionary<Type, ByStringInvoker> byString = new Dictionary<Type, ByStringInvoker>();
+
+        readonly List<FactoryProductBinding> bindings = new List<FactoryProductBinding>();
 
         GrainReferenceService Initialize()
         {
-            var bindings = OrleansStaticFactories.WhereProduct(IsServicedGrain);
-
-            foreach (var binding in bindings)
-            {
-                BindCast(binding);
-
-                if (BindGetByString(binding))
-                    continue;
-
-                BindGetByGuid(binding);
-                BindGetByLong(binding);
-            }
-
+            Initialize(GrainFactoryBindings.WhereProductImplements);
             return this;
         }
 
-        static bool IsServicedGrain(Type type)
+        internal void Initialize(Func<Type, IEnumerable<FactoryProductBinding>> getBindings)
         {
-            return type.Implements(typeof(IHaveGuidId)) ||
-                   type.Implements(typeof(IHaveInt64Id)) ||
-                   type.Implements(typeof(IHaveStringId));
+            foreach (var binding in getBindings(typeof(IHaveGuidId)))
+                BindByGuidId(binding);
+            
+            foreach (var binding in getBindings(typeof(IHaveInt64Id)))
+                BindByInt64Id(binding);
+
+            foreach (var binding in getBindings(typeof(IHaveStringId)))
+                BindByStringId(binding);
         }
 
-        void BindCast(FactoryProductBinding binding)
+        void BindByGuidId(FactoryProductBinding binding)
         {
-            castFactoryMethods[binding.Product] = 
-                binding.FactoryMethodInvoker("Cast", typeof(IAddressable));
+            byGuid[binding.Product] = new ByGuidInvoker(binding);
+            bindings.Add(binding);
         }
 
-        void BindGetByGuid(FactoryProductBinding binding)
+        void BindByInt64Id(FactoryProductBinding binding)
         {
-            getByGuidFactoryMethods[binding.Product] = 
-                binding.FactoryMethodInvoker("GetGrain", typeof(Guid));
+            byInt64[binding.Product] = new ByInt64Invoker(binding);
+            bindings.Add(binding);
         }
 
-        void BindGetByLong(FactoryProductBinding binding)
+        void BindByStringId(FactoryProductBinding binding)
         {
-            getByLongFactoryMethods[binding.Product] = 
-                binding.FactoryMethodInvoker("GetGrain", typeof(long));
-        }
+            if (!binding.Product.GetCustomAttributes(typeof(ExtendedPrimaryKeyAttribute), true).Any())
+                throw new MissingExtendedPrimaryKeyAttributeException(binding.Product);
 
-        bool BindGetByString(FactoryProductBinding binding)
-        {
-            if (!binding.Product.HasAttribute<ExtendedPrimaryKeyAttribute>())
-                return false;
-
-            getByStringFactoryMethods[binding.Product] = 
-                binding.FactoryMethodInvoker("GetGrain", typeof(long), typeof(string));
-
-            return true;
+            byString[binding.Product] = new ByStringInvoker(binding);
+            bindings.Add(binding);
         }
 
         public T Get<T>(Guid id)
@@ -88,31 +73,105 @@ namespace Orleans.Bus
 
         public IHaveGuidId Get(Type @interface, Guid id)
         {
-            var invoker = getByGuidFactoryMethods.Find(@interface);
+            var invoker = byGuid.Find(@interface);
             Debug.Assert(invoker != null);
-
-            return (IHaveGuidId)invoker.Invoke(null, id);
+            return invoker.Invoke(id);
         }
 
         public IHaveInt64Id Get(Type @interface, long id)
         {
-            var invoker = getByLongFactoryMethods.Find(@interface);
+            var invoker = byInt64.Find(@interface);
             Debug.Assert(invoker != null);
-
-            return (IHaveInt64Id)invoker.Invoke(null, id);
+            return invoker.Invoke(id);
         }
 
         public IHaveStringId Get(Type @interface, string id)
         {
-            var invoker = getByStringFactoryMethods.Find(@interface);
+            var invoker = byString.Find(@interface);
             Debug.Assert(invoker != null);
-            
-            return (IHaveStringId)invoker.Invoke(null, 0L, id);
+            return invoker.Invoke(id);
         }
 
         public IEnumerable<Type> RegisteredGrainTypes()
         {
-            return castFactoryMethods.Keys;
-        }  
+            return bindings.Select(x => x.Product);
+        }
+
+        class ByGuidInvoker
+        {
+            readonly Func<Guid, object> invoker;
+
+            public ByGuidInvoker(FactoryProductBinding binding)
+            {
+                var method = binding.FactoryMethod("GetGrain", typeof(Guid));
+                var argument = Expression.Parameter(typeof(Guid), "id");
+
+                var call = Expression.Call(method, new Expression[] { argument });
+                var lambda = Expression.Lambda<Func<Guid, object>>(call, argument);
+
+                invoker = lambda.Compile();
+            }
+
+            public IHaveGuidId Invoke(Guid id)
+            {
+                return (IHaveGuidId)invoker(id);
+            }
+        }
+
+        class ByInt64Invoker
+        {
+            readonly Func<long, object> invoker;
+
+            public ByInt64Invoker(FactoryProductBinding binding)
+            {
+                var method = binding.FactoryMethod("GetGrain", typeof(long));
+                var argument = Expression.Parameter(typeof(long), "id");
+
+                var call = Expression.Call(method, new Expression[] { argument });
+                var lambda = Expression.Lambda<Func<long, object>>(call, argument);
+
+                invoker = lambda.Compile();
+            }
+
+            public IHaveInt64Id Invoke(long id)
+            {
+                return (IHaveInt64Id)invoker(id);
+            }
+        }
+
+        class ByStringInvoker
+        {
+            readonly Func<string, object> invoker;
+
+            public ByStringInvoker(FactoryProductBinding binding)
+            {
+                var method = binding.FactoryMethod("GetGrain", typeof(long), typeof(string));
+                var argument = Expression.Parameter(typeof(string), "ext");
+
+                var call = Expression.Call(method, new Expression[] { Expression.Constant(0L), argument});
+                var lambda = Expression.Lambda<Func<string, object>>(call, argument);
+
+                invoker = lambda.Compile();
+            }
+
+            public IHaveStringId Invoke(string id)
+            {
+                return (IHaveStringId) invoker(id);
+            }
+        }
+
+        [Serializable]
+        internal class MissingExtendedPrimaryKeyAttributeException : ApplicationException
+        {
+            const string message = "Grain '{0}' which implements IHaveStringId interface should be marked with [ExtendedPrimaryKey] attribute.";
+
+            internal MissingExtendedPrimaryKeyAttributeException(Type grainType)
+                : base(string.Format(message, grainType))
+            {}
+
+            protected MissingExtendedPrimaryKeyAttributeException(SerializationInfo info, StreamingContext context)
+                : base(info, context)
+            {}
+        }
     }
 }

@@ -32,9 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Fasterflect">
-      <HintPath>..\..\packages\fasterflect.2.1.3\lib\net40\Fasterflect.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -57,7 +54,6 @@
     <Compile Include="Infrastructure\TestGrain3.cs" />
     <Compile Include="Infrastructure\TestGrainWithGuidId.cs" />
     <Compile Include="Infrastructure\TestGrainWithLongId.cs" />
-    <Compile Include="Infrastructure\TestGrainWithMissingExtendedPrimaryKeyAttribute.cs" />
     <Compile Include="Infrastructure\TestGrainWithStringId.cs" />
     <Compile Include="Infrastructure\TestObservableGrain.cs" />
     <Compile Include="Infrastructure\TestPersistentGrain.cs" />

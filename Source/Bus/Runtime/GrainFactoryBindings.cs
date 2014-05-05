@@ -6,15 +6,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-using Fasterflect;
-
 namespace Orleans.Bus
 {
-    internal static class OrleansStaticFactories
+    internal static class GrainFactoryBindings
     {
         static readonly IList<Type> factories;
 
-        static OrleansStaticFactories()
+        static GrainFactoryBindings()
         {
             factories = LoadAssemblies()
                 .SelectMany(assembly => assembly.ExportedTypes)
@@ -22,11 +20,11 @@ namespace Orleans.Bus
                 .ToList();
         }
 
-        public static IEnumerable<FactoryProductBinding> WhereProduct(Func<Type, bool> predicate)
+        public static IEnumerable<FactoryProductBinding> WhereProductImplements(Type @interface)
         {
             return from factory in factories
                    let product = factory.GetMethod("Cast").ReturnType
-                   where predicate(product)
+                   where product.Implements(@interface)
                    select new FactoryProductBinding(factory, product);
         }
 
@@ -69,9 +67,9 @@ namespace Orleans.Bus
             Product = product;
         }
 
-        public MethodInvoker FactoryMethodInvoker(string methodName, params Type[] parameterTypes)
+        public MethodInfo FactoryMethod(string name, params Type[] parameters)
         {
-            return Factory.DelegateForCallMethod(methodName, Flags.StaticPublic, parameterTypes);
+            return Factory.GetMethod(name, BindingFlags.Public | BindingFlags.Static, null, parameters, null);
         }
     }
 }

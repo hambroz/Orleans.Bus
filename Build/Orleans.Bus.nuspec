@@ -10,9 +10,6 @@
     <iconUrl>https://github.com/yevhen/Orleans.Bus/raw/master/Logo.png</iconUrl>
     <description>Message bus for Orleans framework</description>
     <tags>Orleans messaging bus actor concurrency CQRS</tags>
-    <dependencies>
-       <dependency id="Fasterflect" version="2.1.3" />
-    </dependencies>   
   </metadata>
   <files>
     <file src="Output\Package\Release\Orleans.Bus.dll" target="lib/net45" />
