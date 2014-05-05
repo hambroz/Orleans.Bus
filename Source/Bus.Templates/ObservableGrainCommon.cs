@@ -10,6 +10,7 @@
         /// <param name="o">Client observer proxy</param>
         /// <param name="e">The type of event</param>
         /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task Attach(Observes o, Type e)
         {
             Observers.Attach(o, e);
@@ -22,6 +23,7 @@
         /// <param name="o">Client observer proxy</param>
         /// <param name="e">The type of event</param>
         /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task Detach(Observes o, Type e)
         {
             Observers.Detach(o, e);

@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -33,6 +33,86 @@ namespace Orleans.Bus
         {
             Instance = this;
         }
+
+        #region Shortcuts
+
+        /// <summary>
+        /// Sends command message to a grain with the given <see cref="Guid"/> id
+        /// </summary>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="command">The command to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task Send(Guid id, object command)
+        {
+            return Bus.Send(id, command);
+        }
+
+        /// <summary>
+        /// Sends command message to a grain with the given <see cref="Int64"/> id
+        /// </summary>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="command">The command to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task Send(long id, object command)
+        {
+            return Bus.Send(id, command);
+        }
+        
+        /// <summary>
+        /// Sends command message to a grain with the given <see cref="string"/> id
+        /// </summary>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="command">The command to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task Send(string id, object command)
+        {
+            return Bus.Send(id, command);
+        }
+
+        /// <summary>
+        /// Sends query message to a grain with the given  <see cref="Guid"/> id and casts result to the specified type
+        /// </summary>
+        /// <typeparam name="TResult">The type of result</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="query">The query to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task<TResult> Query<TResult>(Guid id, object query)
+        {
+            return Bus.Query<TResult>(id, query);
+        }
+
+        /// <summary>
+        /// Sends query message to a grain with the given  <see cref="Int64"/> id
+        /// and casts result to the specified type
+        /// </summary>
+        /// <typeparam name="TResult">The type of result</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="query">The query to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task<TResult> Query<TResult>(long id, object query)
+        {
+            return Bus.Query<TResult>(id, query);
+        }
+        
+        /// <summary>
+        /// Sends query message to a grain with the given  <see cref="String"/> id and casts result to the specified type
+        /// </summary>
+        /// <typeparam name="TResult">The type of result</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="query">The query to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task<TResult> Query<TResult>(string id, object query)
+        {
+            return Bus.Query<TResult>(id, query);
+        }
+
+        #endregion
 
         #if DEBUG
         
@@ -234,6 +314,86 @@ namespace Orleans.Bus
         {
             Instance = this;
         }
+
+        #region Shortcuts
+
+        /// <summary>
+        /// Sends command message to a grain with the given <see cref="Guid"/> id
+        /// </summary>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="command">The command to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task Send(Guid id, object command)
+        {
+            return Bus.Send(id, command);
+        }
+
+        /// <summary>
+        /// Sends command message to a grain with the given <see cref="Int64"/> id
+        /// </summary>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="command">The command to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task Send(long id, object command)
+        {
+            return Bus.Send(id, command);
+        }
+        
+        /// <summary>
+        /// Sends command message to a grain with the given <see cref="string"/> id
+        /// </summary>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="command">The command to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task Send(string id, object command)
+        {
+            return Bus.Send(id, command);
+        }
+
+        /// <summary>
+        /// Sends query message to a grain with the given  <see cref="Guid"/> id and casts result to the specified type
+        /// </summary>
+        /// <typeparam name="TResult">The type of result</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="query">The query to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task<TResult> Query<TResult>(Guid id, object query)
+        {
+            return Bus.Query<TResult>(id, query);
+        }
+
+        /// <summary>
+        /// Sends query message to a grain with the given  <see cref="Int64"/> id
+        /// and casts result to the specified type
+        /// </summary>
+        /// <typeparam name="TResult">The type of result</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="query">The query to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task<TResult> Query<TResult>(long id, object query)
+        {
+            return Bus.Query<TResult>(id, query);
+        }
+        
+        /// <summary>
+        /// Sends query message to a grain with the given  <see cref="String"/> id and casts result to the specified type
+        /// </summary>
+        /// <typeparam name="TResult">The type of result</typeparam>
+        /// <param name="id">Id of a grain</param>
+        /// <param name="query">The query to send</param>
+        /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Task<TResult> Query<TResult>(string id, object query)
+        {
+            return Bus.Query<TResult>(id, query);
+        }
+
+        #endregion
 
         #if DEBUG
         
@@ -536,6 +696,7 @@ namespace Orleans.Bus
         /// <param name="o">Client observer proxy</param>
         /// <param name="e">The type of event</param>
         /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task Attach(Observes o, Type e)
         {
             Observers.Attach(o, e);
@@ -548,6 +709,7 @@ namespace Orleans.Bus
         /// <param name="o">Client observer proxy</param>
         /// <param name="e">The type of event</param>
         /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task Detach(Observes o, Type e)
         {
             Observers.Detach(o, e);
@@ -573,6 +735,7 @@ namespace Orleans.Bus
         /// <param name="o">Client observer proxy</param>
         /// <param name="e">The type of event</param>
         /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task Attach(Observes o, Type e)
         {
             Observers.Attach(o, e);
@@ -585,6 +748,7 @@ namespace Orleans.Bus
         /// <param name="o">Client observer proxy</param>
         /// <param name="e">The type of event</param>
         /// <returns>Promise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task Detach(Observes o, Type e)
         {
             Observers.Detach(o, e);
