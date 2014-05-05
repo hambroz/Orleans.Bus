@@ -18,7 +18,7 @@ namespace Orleans.Bus
         /// <typeparam name="T">Type of grain</typeparam>
         /// <param name="id">Unique identifier</param>
         /// <returns>Grain reference</returns>
-        T Reference<T>(Guid id) where T : IGrainWithGuidId;
+        T Reference<T>(Guid id) where T : IHaveGuidId;
 
         /// <summary>
         /// Gets reference to the activation of the grain by its unique long  identifier
@@ -26,7 +26,7 @@ namespace Orleans.Bus
         /// <typeparam name="T">Type of grain</typeparam>
         /// <param name="id">Unique identifier</param>
         /// <returns>Grain reference</returns>
-        T Reference<T>(long id) where T : IGrainWithLongId;
+        T Reference<T>(long id) where T : IHaveInt64Id;
 
         /// <summary>
         /// Gets reference to the activation of the grain by its unique string identifier
@@ -34,7 +34,7 @@ namespace Orleans.Bus
         /// <typeparam name="T">Type of grain</typeparam>
         /// <param name="id">Unique identifier</param>
         /// <returns>Grain reference</returns>
-        T Reference<T>(string id) where T : IGrainWithStringId;
+        T Reference<T>(string id) where T : IHaveStringId;
 
         /// <summary>
         /// Gets reference to the activation of the grain by its unique GUID identifier
@@ -42,7 +42,7 @@ namespace Orleans.Bus
         /// <param name="interface">Type of grain interface</param>
         /// <param name="id">Unique identifier</param>
         /// <returns>Grain reference</returns>
-        IGrainWithGuidId Reference(Type @interface, Guid id);
+        IHaveGuidId Reference(Type @interface, Guid id);
 
         /// <summary>
         /// Gets reference to the activation of the grain by its unique long  identifier
@@ -50,7 +50,7 @@ namespace Orleans.Bus
         /// <param name="interface">Type of grain interface</param>
         /// <param name="id">Unique identifier</param>
         /// <returns>Grain reference</returns>
-        IGrainWithLongId Reference(Type @interface, long id);
+        IHaveInt64Id Reference(Type @interface, long id);
 
         /// <summary>
         /// Gets reference to the activation of the grain by its unique string identifier
@@ -58,7 +58,7 @@ namespace Orleans.Bus
         /// <param name="interface">Type of grain interface</param>
         /// <param name="id">Unique identifier</param>
         /// <returns>Grain reference</returns>
-        IGrainWithStringId Reference(Type @interface, string id);
+        IHaveStringId Reference(Type @interface, string id);
 
         /// <summary>
         /// Returns all grain interface types registered within current runtime
@@ -92,9 +92,9 @@ namespace Orleans.Bus
 
         static bool IsServicedGrain(Type type)
         {
-            return type.Implements(typeof(IGrainWithGuidId)) ||
-                   type.Implements(typeof(IGrainWithLongId)) ||
-                   type.Implements(typeof(IGrainWithStringId));
+            return type.Implements(typeof(IHaveGuidId)) ||
+                   type.Implements(typeof(IHaveInt64Id)) ||
+                   type.Implements(typeof(IHaveStringId));
         }
 
         void BindCast(FactoryProductBinding binding)
@@ -141,12 +141,12 @@ namespace Orleans.Bus
             return (T)(this as IGrainRuntime).Reference(typeof(T), id);
         }
 
-        IGrainWithGuidId IGrainReferenceService.Reference(Type @interface, Guid id)
+        IHaveGuidId IGrainReferenceService.Reference(Type @interface, Guid id)
         {
             var invoker = getByGuidFactoryMethods.Find(@interface);
 
             if (invoker != null)
-                return (IGrainWithGuidId)invoker.Invoke(null, id);
+                return (IHaveGuidId)invoker.Invoke(null, id);
 
             if (!@interface.IsInterface)
                 throw new AccessByClassTypeException(@interface);
@@ -154,12 +154,12 @@ namespace Orleans.Bus
             throw new FactoryMethodNotFoundException(@interface);
         }
 
-        IGrainWithLongId IGrainReferenceService.Reference(Type @interface, long id)
+        IHaveInt64Id IGrainReferenceService.Reference(Type @interface, long id)
         {
             var invoker = getByLongFactoryMethods.Find(@interface);
 
             if (invoker != null)
-                return (IGrainWithLongId)invoker.Invoke(null, id);
+                return (IHaveInt64Id)invoker.Invoke(null, id);
 
             if (!@interface.IsInterface)
                 throw new AccessByClassTypeException(@interface);
@@ -167,12 +167,12 @@ namespace Orleans.Bus
             throw new FactoryMethodNotFoundException(@interface);
         }
 
-        IGrainWithStringId IGrainReferenceService.Reference(Type @interface, string id)
+        IHaveStringId IGrainReferenceService.Reference(Type @interface, string id)
         {
             var invoker = getByStringFactoryMethods.Find(@interface);
 
             if (invoker != null)
-                return (IGrainWithStringId)invoker.Invoke(null, 0L, id);
+                return (IHaveStringId)invoker.Invoke(null, 0L, id);
 
             if (!@interface.IsInterface)
                 throw new AccessByClassTypeException(@interface);

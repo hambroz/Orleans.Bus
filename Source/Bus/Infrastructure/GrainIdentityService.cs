@@ -13,36 +13,36 @@ namespace Orleans.Bus
         /// </summary>
         /// <param name="grain">Instance of the grain, for which identifier should be returned</param>
         /// <returns><see cref="Guid"/> identifier</returns>
-        Guid Id(IGrainWithGuidId grain);
+        Guid Id(IHaveGuidId grain);
 
         /// <summary>
         /// Gets identifier of the specified grain.
         /// </summary>
         /// <param name="grain">Instance of the grain, for which identifier should be returned</param>
         /// <returns><see cref="Int64"/> identifier</returns>
-        long Id(IGrainWithLongId grain);
+        long Id(IHaveInt64Id grain);
 
         /// <summary>
         /// Gets identifier of the specified grain.
         /// </summary>
         /// <param name="grain">Instance of the grain, for which identifier should be returned</param>
         /// <returns><see cref="String"/> identifier</returns>
-        string Id(IGrainWithStringId grain);
+        string Id(IHaveStringId grain);
     }
 
     public sealed partial class GrainRuntime
     {
-        Guid IGrainIdentityService.Id(IGrainWithGuidId grain)
+        Guid IGrainIdentityService.Id(IHaveGuidId grain)
         {
             return ((IGrain)grain).GetPrimaryKey();
         }
 
-        long IGrainIdentityService.Id(IGrainWithLongId grain)
+        long IGrainIdentityService.Id(IHaveInt64Id grain)
         {
             return ((IGrain)grain).GetPrimaryKeyLong();
         }
 
-        string IGrainIdentityService.Id(IGrainWithStringId grain)
+        string IGrainIdentityService.Id(IHaveStringId grain)
         {
             string id;
             ((IGrain)grain).GetPrimaryKeyLong(out id);

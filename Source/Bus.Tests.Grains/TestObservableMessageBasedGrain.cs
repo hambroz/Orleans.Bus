@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public class TestObservableMessageBasedGrain : ObservableMessageBasedGrainWithLongId, ITestObservableMessageBasedGrain
+    public class TestObservableMessageBasedGrain : ObservableMessageBasedGrainWithInt64Id, ITestObservableMessageBasedGrain
     {
         public Task Handle(PublishText command)
         {

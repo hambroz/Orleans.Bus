@@ -32,10 +32,10 @@ namespace Orleans.Bus
         {
             const long id = 123L;
 
-            var grain = TestGrainWithLongIdFactory.GetGrain(id);
+            var grain = TestGrainWithInt64IdFactory.GetGrain(id);
             Assert.AreEqual(id, grain.GetPrimaryKeyLong());
 
-            Assert.NotNull(runtime.Reference<ITestGrainWithLongId>(id));
+            Assert.NotNull(runtime.Reference<ITestGrainWithInt64Id>(id));
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace Orleans.Bus
         public void Getting_reference_by_class_type_instead_of_interface()
         {
             Assert.Throws<GrainRuntime.AccessByClassTypeException>(() =>
-                runtime.Reference<TestGrainWithLongId>(1));
+                runtime.Reference<TestGrainWithInt64Id>(1));
 
             Assert.Throws<GrainRuntime.AccessByClassTypeException>(() =>
                 runtime.Reference<TestGrainWithGuidId>(Guid.NewGuid()));

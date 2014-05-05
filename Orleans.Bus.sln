@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bus.Tests.Grains", "Source\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bus.Tests", "Source\Bus.Tests\Bus.Tests.csproj", "{5BC7C6F2-B8CD-4EE8-B751-533BDC20AF9A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bus.Templates", "Source\Bus.Templates\Bus.Templates.csproj", "{6DCDF417-8964-40AB-BA21-F7C00E3F05B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{5BC7C6F2-B8CD-4EE8-B751-533BDC20AF9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5BC7C6F2-B8CD-4EE8-B751-533BDC20AF9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BC7C6F2-B8CD-4EE8-B751-533BDC20AF9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DCDF417-8964-40AB-BA21-F7C00E3F05B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DCDF417-8964-40AB-BA21-F7C00E3F05B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DCDF417-8964-40AB-BA21-F7C00E3F05B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DCDF417-8964-40AB-BA21-F7C00E3F05B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

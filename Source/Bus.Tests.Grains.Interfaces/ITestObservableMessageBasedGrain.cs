@@ -27,7 +27,7 @@ namespace Orleans.Bus
     }
 
     [Publisher(typeof(TextPublished))]
-    public interface ITestObservableMessageBasedGrain : IObservableGrain, IGrainWithLongId
+    public interface ITestObservableMessageBasedGrain : IObservableGrain, IHaveInt64Id
     {
         [Handler] Task Handle(PublishText cmd);
     }

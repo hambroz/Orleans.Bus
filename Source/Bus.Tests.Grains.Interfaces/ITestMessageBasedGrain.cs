@@ -34,7 +34,7 @@ namespace Orleans.Bus
     public class GetBar : Query<string>
     {}
 
-    public interface ITestMessageBasedGrain : IGrain, IGrainWithLongId
+    public interface ITestMessageBasedGrain : IGrain, IHaveInt64Id
     {
         [Handler] Task Handle(DoFoo cmd);
         [Handler] Task Handle(DoBar cmd);

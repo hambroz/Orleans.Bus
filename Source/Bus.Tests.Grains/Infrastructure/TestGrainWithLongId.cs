@@ -6,7 +6,7 @@ using Orleans.Bus;
 
 namespace Orleans.Bus
 {
-    public class TestGrainWithLongId : MessageBasedGrain, ITestGrainWithLongId
+    public class TestGrainWithInt64Id : MessageBasedGrain, ITestGrainWithInt64Id
     {
         public Task Foo() { return TaskDone.Done; }
     }

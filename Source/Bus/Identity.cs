@@ -4,20 +4,20 @@ using System.Linq;
 namespace Orleans.Bus
 {
     /// <summary>
-    /// Base interface for grains identifiable by GUID identifier
+    /// Base interface for grains identifiable by <see cref="Guid"/> identifier
     /// </summary>
-    public interface IGrainWithGuidId
-    { }
+    public interface IHaveGuidId
+    {}
 
     /// <summary>
-    /// Base interface for grains identifiable by long identifier
+    /// Base interface for grains identifiable by <see cref="Int64"/> identifier
     /// </summary>
-    public interface IGrainWithLongId
-    { }
+    public interface IHaveInt64Id
+    {}
 
     /// <summary>
-    /// Base interface for grains identifiable by string identifier
+    /// Base interface for grains identifiable by <see cref="String"/> identifier
     /// </summary>
-    public interface IGrainWithStringId
-    { }
+    public interface IHaveStringId
+    {}
 }

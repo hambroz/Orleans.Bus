@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public class TestMessageBasedGrain : MessageBasedGrainWithLongId, ITestMessageBasedGrain
+    public class TestMessageBasedGrain : MessageBasedGrainWithInt64Id, ITestMessageBasedGrain
     {
         string fooText = "";
         string barText = "";

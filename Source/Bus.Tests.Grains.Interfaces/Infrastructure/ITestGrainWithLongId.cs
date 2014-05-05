@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public interface ITestGrainWithLongId : IGrain, IGrainWithLongId
+    public interface ITestGrainWithInt64Id : IGrain, IHaveInt64Id
     {
         Task Foo();
     }

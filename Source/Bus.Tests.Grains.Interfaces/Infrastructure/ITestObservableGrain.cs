@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public interface ITestObservableGrain : IGrain, IGrainWithGuidId
+    public interface ITestObservableGrain : IGrain, IHaveGuidId
     {
         Task Publish(string e);
         Task Subscribe(ITestGrainObserver observer);
