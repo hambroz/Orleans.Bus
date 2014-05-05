@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6DCDF417-8964-40AB-BA21-F7C00E3F05B9}</ProjectGuid>
+    <ProjectGuid>{EBB46E7E-96F5-41B7-9BBF-155B540A543B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Orleans.Bus</RootNamespace>
-    <AssemblyName>Orleans.Bus.Templates</AssemblyName>
+    <AssemblyName>Orleans.Bus.Observables</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -28,7 +28,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\Orleans.Bus.Templates.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\Orleans.Bus.Observables.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Orleans">
@@ -39,34 +39,22 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <None Include="GrainCommon.cs">
-      <LastGenOutput>GrainCommon1.cs</LastGenOutput>
-    </None>
-    <Compile Include="MessageBasedGrain.cs">
-      <DependentUpon>MessageBasedGrain.tt</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
+    <Compile Include="..\ProductAssemblyInfo.cs">
+      <Link>Properties\ProductAssemblyInfo.cs</Link>
     </Compile>
-    <None Include="ObservableGrainCommon.cs" />
-    <None Include="MessageBasedGrain.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>MessageBasedGrain.cs</LastGenOutput>
-    </None>
+    <Compile Include="Observable.cs" />
+    <Compile Include="Observer.cs" />
+    <Compile Include="ObserverCollection.cs" />
+    <Compile Include="Properties\orleans.codegen.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Bus.Observables\Bus.Observables.csproj">
-      <Project>{ebb46e7e-96f5-41b7-9bbf-155b540a543b}</Project>
-      <Name>Bus.Observables</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Bus\Bus.csproj">
-      <Project>{944568ea-bc0b-49bc-af0f-b4a4a62858ac}</Project>
-      <Name>Bus</Name>
-    </ProjectReference>
-  </ItemGroup>
+  <PropertyGroup>
+    <OrleansProjectType>Client</OrleansProjectType>
+  </PropertyGroup>
+  <Import Project="$(OrleansSDK)\Binaries\OrleansClient\Orleans.SDK.targets" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -69,6 +69,10 @@
     <None Include="Packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Bus.Observables\Bus.Observables.csproj">
+      <Project>{ebb46e7e-96f5-41b7-9bbf-155b540a543b}</Project>
+      <Name>Bus.Observables</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Bus.Tests.Grains.Interfaces\Bus.Tests.Grains.Interfaces.csproj">
       <Project>{3d7a4d04-6d86-458a-9c52-331fae3d428c}</Project>
       <Name>Bus.Tests.Grains.Interfaces</Name>

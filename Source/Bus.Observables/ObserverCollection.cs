@@ -1,44 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    /// <summary>
-    /// Callback interface need to be implemented by any client, 
-    /// which want to be notified about particluar events.
-    /// </summary>
-    public interface Observes : IGrainObserver
-    {
-        /// <summary>
-        /// Event notifications will be delivered to this callback method
-        /// </summary>
-        /// <param name="sender">An id of the sender</param>
-        /// <param name="e">An event</param>
-        void On(object sender, object e);
-    }
-
-    /// <summary>
-    /// Internal iterface used only by infrastructure!
-    /// </summary>
-    public interface IObservableGrain : IGrain
-    {
-        /// <summary>
-        /// Attaches given observer for the given type of event.
-        /// </summary>
-        /// <param name="o">The observer proxy.</param>
-        /// <param name="e">The type of event</param>
-        Task Attach(Observes o, Type e);
-
-        /// <summary>
-        /// Detaches given observer for the given type of event.
-        /// </summary>
-        /// <param name="o">The observer proxy.</param>
-        /// <param name="e">The type of event</param>
-        Task Detach(Observes o, Type e);
-    }
-
     /// <summary>
     /// This  is a helper class for grains that support observers.
     /// It provides methods for attaching/detaching observers and for notifying about particular events.
@@ -68,7 +33,7 @@ namespace Orleans.Bus
         /// <param name="event">An event</param>
         void Notify(object sender, object @event);
     }
-    
+
     /// <summary>
     /// Default implementation of <see cref="IObserverCollection"/>
     /// </summary>
@@ -120,30 +85,6 @@ namespace Orleans.Bus
         {
             HashSet<Observes> observers;
             return subscriptions.TryGetValue(@event, out observers) ? observers : null;
-        }
-    }
-
-    /// <summary>
-    /// Observer proxy to be used for subscribing to notifications
-    /// </summary>
-    public interface IObserver
-    {}
-
-    internal sealed class Observer : IObserver
-    {
-        internal readonly Observes Proxy;
-
-        internal Observer(Observes proxy)
-        {
-            Proxy = proxy;
-        }
-    }
-
-    internal static class ObserverExtensions
-    {
-        public static Observes GetProxy(this IObserver observer)
-        {
-            return ((Observer)observer).Proxy;
         }
     }
 }

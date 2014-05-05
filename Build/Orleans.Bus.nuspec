@@ -17,8 +17,11 @@
   <files>
     <file src="Output\Package\Release\Orleans.Bus.dll" target="lib/net45" />
     <file src="Output\Package\Release\Orleans.Bus.xml" target="lib/net45" />
-    <file src="Output\Package\Release\Orleans.Bus.pdb" target="lib/net45" />
-    <file src="Source\Bus\Templates\MessageBasedGrain.cs" target="linked" />   
+    <file src="Output\Package\Release\Orleans.Bus.pdb" target="lib/net45" />    
+    <file src="Output\Package\Release\Orleans.Bus.Observables.dll" target="lib/net45" />
+    <file src="Output\Package\Release\Orleans.Bus.Observables.xml" target="lib/net45" />
+    <file src="Output\Package\Release\Orleans.Bus.Observables.pdb" target="lib/net45" />
+    <file src="Source\Bus.Templates\MessageBasedGrain.cs" target="linked" />   
     <file src="Build\Readme.txt" target="" />    
   </files>
 </package>
