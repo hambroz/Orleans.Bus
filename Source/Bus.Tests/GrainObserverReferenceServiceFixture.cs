@@ -19,44 +19,34 @@ namespace Orleans.Bus
         }
 
         [Test]
-        public async void Getting_observer_reference_by_interface()
+        public async void Getting_proxy_by_interface()
         {
             ITestGrainObserver client = new TestClient();
 
             var observable = references.Get<ITestObservableGrain>(Guid.NewGuid());
-            var observer = await observers.Create(client);
+            var proxy = await observers.CreateProxy(client);
 
             Assert.DoesNotThrow(
-                async ()=> await observable.Subscribe(observer.Proxy));
+                async ()=> await observable.Subscribe(proxy));
         }
 
         [Test]
-        public void Getting_observer_reference_by_real_type()
+        public void Getting_proxy_by_real_type()
         {
             var client = new TestClient();
 
             Assert.Throws<GrainObserverService.ObserverFactoryMethodNotFoundException>(
-                async () => await observers.Create(client));
+                async () => await observers.CreateProxy(client));
         }
 
         [Test]
-        public async void Deleting_observer_reference_by_interface()
+        public async void Deleting_proxy_by_interface()
         {
             ITestGrainObserver client = new TestClient();
 
-            var observer = await observers.Create(client);
+            var observer = await observers.CreateProxy(client);
 
-            Assert.DoesNotThrow(() => observers.Delete(observer));
-        }
-
-        [Test]
-        public async void Non_generic_version()
-        {
-            var client = new TestClient();
-
-            var observer = await observers.Create(typeof(ITestGrainObserver), client);
-
-            Assert.DoesNotThrow(() => observers.Delete(typeof(ITestGrainObserver), observer));
+            Assert.DoesNotThrow(() => observers.DeleteProxy(observer));
         }
 
         class TestClient : ITestGrainObserver

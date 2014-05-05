@@ -329,12 +329,12 @@ namespace Orleans.Bus
 
         async Task<IObserver> IMessageBus.CreateObserver(Observes client)
         {
-            return new Observer(await observers.Create(client));
+            return new Observer(await observers.CreateProxy(client));
         }
 
         void IMessageBus.DeleteObserver(IObserver observer)
         {
-            observers.Delete(observer.GetReference());
+            observers.DeleteProxy(observer.GetProxy());
         }
     }
 }

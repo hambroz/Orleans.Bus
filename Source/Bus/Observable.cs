@@ -131,11 +131,11 @@ namespace Orleans.Bus
 
     internal sealed class Observer : IObserver
     {
-        internal readonly ObserverReference<Observes> Reference;
+        internal readonly Observes Proxy;
 
-        internal Observer(ObserverReference<Observes> reference)
+        internal Observer(Observes proxy)
         {
-            Reference = reference;
+            Proxy = proxy;
         }
     }
 
@@ -143,12 +143,7 @@ namespace Orleans.Bus
     {
         public static Observes GetProxy(this IObserver observer)
         {
-            return observer.GetReference().Proxy;
-        }
-
-        public static ObserverReference<Observes> GetReference(this IObserver observer)
-        {
-            return ((Observer)observer).Reference;
+            return ((Observer)observer).Proxy;
         }
     }
 }

@@ -8,16 +8,6 @@ using Fasterflect;
 
 namespace Orleans.Bus
 {
-    class ObserverReference<TGrainObserver> where TGrainObserver : IGrainObserver
-    {
-        public readonly TGrainObserver Proxy;
-
-        public ObserverReference(TGrainObserver proxy)
-        {
-            Proxy = proxy;
-        }
-    }
-
     class GrainObserverService
     {
         public static readonly GrainObserverService Instance = new GrainObserverService().Initialize();
@@ -59,47 +49,28 @@ namespace Orleans.Bus
                 binding.FactoryMethodInvoker("DeleteObjectReference", binding.Product);
         }
 
-        public async Task<ObserverReference<TGrainObserver>> Create<TGrainObserver>(TGrainObserver client) where TGrainObserver : IGrainObserver
+        public Task<TGrainObserver> CreateProxy<TGrainObserver>(TGrainObserver client) 
+            where TGrainObserver : IGrainObserver
         {
             var invoker = createObjectReferenceFactoryMethods.Find(typeof(TGrainObserver));
 
             if (invoker == null)
-                throw ObserverFactoryMethodNotFoundException.Create(typeof(TGrainObserver), "CreateObjectReference()");
+                throw ObserverFactoryMethodNotFoundException.Create(
+                    typeof(TGrainObserver), "CreateObjectReference()");
 
-            return new ObserverReference<TGrainObserver>(await (Task<TGrainObserver>)invoker.Invoke(null, client));
+            return (Task<TGrainObserver>)invoker.Invoke(null, client);
         }
 
-        public void Delete<TGrainObserver>(ObserverReference<TGrainObserver> reference) where TGrainObserver : IGrainObserver
+        public void DeleteProxy<TGrainObserver>(TGrainObserver proxy) 
+            where TGrainObserver : IGrainObserver
         {
             var invoker = deleteObjectReferenceFactoryMethods.Find(typeof(TGrainObserver));
 
             if (invoker == null)
-                throw ObserverFactoryMethodNotFoundException.Create(typeof(TGrainObserver), "DeleteObjectReference()");
+                throw ObserverFactoryMethodNotFoundException.Create(
+                    typeof(TGrainObserver), "DeleteObjectReference()");
 
-            invoker.Invoke(null, reference.Proxy);
-        }
-
-        public async Task<ObserverReference<IGrainObserver>> Create(Type @interface, IGrainObserver client)
-        {
-            var invoker = createObjectReferenceFactoryMethods.Find(@interface);
-
-            if (invoker == null)
-                throw ObserverFactoryMethodNotFoundException.Create(@interface, "CreateObjectReference()");
-
-            var task = (Task) invoker.Invoke(null, client);
-            await task;
-
-            return new ObserverReference<IGrainObserver>((IGrainObserver)task.GetPropertyValue("Result"));
-        }
-
-        public void Delete(Type @interface, ObserverReference<IGrainObserver> reference)
-        {
-            var invoker = deleteObjectReferenceFactoryMethods.Find(@interface);
-
-            if (invoker == null)
-                throw ObserverFactoryMethodNotFoundException.Create(@interface, "DeleteObjectReference()");
-
-            invoker.Invoke(null, reference.Proxy);
+            invoker.Invoke(null, proxy);
         }
 
         public IEnumerable<Type> RegisteredGrainObserverTypes()
