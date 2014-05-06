@@ -1,31 +1,29 @@
-﻿        /// <summary>
-        /// Default instance of <see cref="IObserverCollection"/> of the current grain.
-        /// </summary>
-        /// <remarks>You can substitute it within a test harness</remarks>
-        public IObserverCollection Observers = new ObserverCollection();
+﻿        readonly IObserverCollection observers = 
+        #if GRAIN_STUBBING_ENABLED
+            new ObserverCollectionStub();
+        #else
+            new ObserverCollection();
+        #endif
 
-        /// <summary>
-        /// Attaches given observer to receive events of the specified type 
-        /// </summary>
-        /// <param name="o">Client observer proxy</param>
-        /// <param name="e">The type of event</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Task Attach(Observes o, Type e)
+        #if GRAIN_STUBBING_ENABLED
+        
+        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
         {
-            Observers.Attach(o, e);
+            get {return (ObserverCollectionStub)observers; }
+        }
+        
+        #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Attach(Observes o, Type e)
+        {
+            observers.Attach(o, e);
             return TaskDone.Done;
         }
 
-        /// <summary>
-        /// Detaches given observer from receiving events of the specified type 
-        /// </summary>
-        /// <param name="o">Client observer proxy</param>
-        /// <param name="e">The type of event</param>
-        /// <returns>Promise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Task Detach(Observes o, Type e)
+        Task IObservableGrain.Detach(Observes o, Type e)
         {
-            Observers.Detach(o, e);
+            observers.Detach(o, e);
             return TaskDone.Done;
         }

@@ -4,17 +4,35 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
+#if GRAIN_STUBBING_ENABLED
+using Orleans.Bus.Stubs;
+#endif 
+
 namespace Orleans.Bus
 {
     /// <summary>
     /// Base class for all kinds of message based grains
     /// </summary>
     public abstract class MessageBasedGrain : GrainBase, IGrain
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedMessageGrain
+        #endif
     {
-        /// <summary>
-        /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
-        /// </summary>
-        public IMessageBus Bus = MessageBus.Instance;
+        IMessageBus bus = 
+        #if GRAIN_STUBBING_ENABLED
+            new MessageBusStub();
+        #else
+            MessageBus.Instance;
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        MessageBusStub IStubbedMessageGrain.Bus
+        {
+            get {return (MessageBusStub)bus; }
+        }
+        
+        #endif
 
         #region Message exchange shortcuts
 
@@ -28,7 +46,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(Guid id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
         
         /// <summary>
@@ -41,7 +59,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(long id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
         
         /// <summary>
@@ -54,7 +72,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(string id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
 
         /// <summary>
@@ -68,7 +86,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
         
         /// <summary>
@@ -83,7 +101,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(long id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
         
         /// <summary>
@@ -97,7 +115,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(string id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
 
         #endregion
@@ -150,11 +168,12 @@ namespace Orleans.Bus
         
         #if GRAIN_STUBBING_ENABLED
 
-        /// <summary>
-        /// Track all instance-level events (like timer registrations, deactivation request, etc). Useful for testing purposes. 
-        /// Works only if build specifies <c>GRAIN_STUBBING_ENABLED</c> constant!
-        /// </summary>
-        public IList<object> Dispatched = new List<object>();
+        List<GrainAuditEvent> dispatched = new List<GrainAuditEvent>();
+
+        List<GrainAuditEvent> IStubbedMessageGrain.Dispatched
+        {
+            get {return dispatched; }
+        }
 
         #endif
 
@@ -209,7 +228,7 @@ namespace Orleans.Bus
             #if GRAIN_STUBBING_ENABLED
 
             timer = new TimerStub(name);
-            Dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
+            dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
             
             #else
             timer = base.RegisterTimer(s => callback((TTimerState) s), state, due, period);
@@ -228,7 +247,7 @@ namespace Orleans.Bus
             timer.Dispose();
 
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new UnregisteredTimer(name));
+            dispatched.Add(new UnregisteredTimer(name));
             #endif
         }
 
@@ -285,7 +304,7 @@ namespace Orleans.Bus
             var reminder = new ReminderStub(name);
             reminders[name] = reminder;
 
-            Dispatched.Add(new RegisteredReminder(name, due, period));
+            dispatched.Add(new RegisteredReminder(name, due, period));
             return TaskDone.Done;
             
             #else
@@ -307,7 +326,7 @@ namespace Orleans.Bus
             #if GRAIN_STUBBING_ENABLED
             
             reminders.Remove(name);
-            Dispatched.Add(new UnregisteredReminder(name));
+            dispatched.Add(new UnregisteredReminder(name));
             return TaskDone.Done;
             
             #else
@@ -368,7 +387,7 @@ namespace Orleans.Bus
         protected new void DeactivateOnIdle()
         {
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new RequestedDeactivationOnIdle());
+            dispatched.Add(new RequestedDeactivationOnIdle());
             #else
             base.DeactivateOnIdle();
             #endif
@@ -387,7 +406,7 @@ namespace Orleans.Bus
         protected new void DelayDeactivation(TimeSpan period)
         {
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new RequestedDeactivationDelay(period));
+            dispatched.Add(new RequestedDeactivationDelay(period));
             #else
             base.DelayDeactivation(period);
             #endif
@@ -399,13 +418,28 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for all kinds of persistent message based grains
     /// </summary>
-    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain 
+    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedMessageGrain
+            , IStubState<TState>
+        #endif	 
         where TState : class, IGrainState
     {
-        /// <summary>
-        /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
-        /// </summary>
-        public IMessageBus Bus = MessageBus.Instance;
+        IMessageBus bus = 
+        #if GRAIN_STUBBING_ENABLED
+            new MessageBusStub();
+        #else
+            MessageBus.Instance;
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        MessageBusStub IStubbedMessageGrain.Bus
+        {
+            get {return (MessageBusStub)bus; }
+        }
+        
+        #endif
 
         #region Message exchange shortcuts
 
@@ -419,7 +453,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(Guid id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
         
         /// <summary>
@@ -432,7 +466,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(long id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
         
         /// <summary>
@@ -445,7 +479,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(string id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
 
         /// <summary>
@@ -459,7 +493,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
         
         /// <summary>
@@ -474,7 +508,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(long id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
         
         /// <summary>
@@ -488,7 +522,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(string id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
 
         #endregion
@@ -541,11 +575,12 @@ namespace Orleans.Bus
         
         #if GRAIN_STUBBING_ENABLED
 
-        /// <summary>
-        /// Track all instance-level events (like timer registrations, deactivation request, etc). Useful for testing purposes. 
-        /// Works only if build specifies <c>GRAIN_STUBBING_ENABLED</c> constant!
-        /// </summary>
-        public IList<object> Dispatched = new List<object>();
+        List<GrainAuditEvent> dispatched = new List<GrainAuditEvent>();
+
+        List<GrainAuditEvent> IStubbedMessageGrain.Dispatched
+        {
+            get {return dispatched; }
+        }
 
         #endif
 
@@ -600,7 +635,7 @@ namespace Orleans.Bus
             #if GRAIN_STUBBING_ENABLED
 
             timer = new TimerStub(name);
-            Dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
+            dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
             
             #else
             timer = base.RegisterTimer(s => callback((TTimerState) s), state, due, period);
@@ -619,7 +654,7 @@ namespace Orleans.Bus
             timer.Dispose();
 
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new UnregisteredTimer(name));
+            dispatched.Add(new UnregisteredTimer(name));
             #endif
         }
 
@@ -676,7 +711,7 @@ namespace Orleans.Bus
             var reminder = new ReminderStub(name);
             reminders[name] = reminder;
 
-            Dispatched.Add(new RegisteredReminder(name, due, period));
+            dispatched.Add(new RegisteredReminder(name, due, period));
             return TaskDone.Done;
             
             #else
@@ -698,7 +733,7 @@ namespace Orleans.Bus
             #if GRAIN_STUBBING_ENABLED
             
             reminders.Remove(name);
-            Dispatched.Add(new UnregisteredReminder(name));
+            dispatched.Add(new UnregisteredReminder(name));
             return TaskDone.Done;
             
             #else
@@ -759,7 +794,7 @@ namespace Orleans.Bus
         protected new void DeactivateOnIdle()
         {
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new RequestedDeactivationOnIdle());
+            dispatched.Add(new RequestedDeactivationOnIdle());
             #else
             base.DeactivateOnIdle();
             #endif
@@ -778,7 +813,7 @@ namespace Orleans.Bus
         protected new void DelayDeactivation(TimeSpan period)
         {
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new RequestedDeactivationDelay(period));
+            dispatched.Add(new RequestedDeactivationDelay(period));
             #else
             base.DelayDeactivation(period);
             #endif
@@ -788,10 +823,7 @@ namespace Orleans.Bus
 		        
 		#if GRAIN_STUBBING_ENABLED
 
-		/// <summary>
-        /// Sets grain's state for testing purposes
-        /// </summary>
-        public void SetState(TState state)
+        void IStubState<TState>.SetState(TState state)
         {
 			#if DEBUG
 			explicitState = state;
@@ -815,13 +847,13 @@ namespace Orleans.Bus
     /// Base class for message based grains identifiable by <see cref="Guid"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWithGuidId : MessageBasedGrain, IHaveGuidId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubGuidId
+        #endif	
     {
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Guid id)
+        void IStubGuidId.SetId(Guid id)
         {
 			explicitId = id;
 		}
@@ -849,13 +881,13 @@ namespace Orleans.Bus
     /// Base class for message based grains identifiable by <see cref="Int64"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWithInt64Id : MessageBasedGrain, IHaveInt64Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStubInt64Id
+        #endif	
     {
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Int64 id)
+        void IStubInt64Id.SetId(Int64 id)
         {
 			explicitId = id;
 		}
@@ -883,13 +915,13 @@ namespace Orleans.Bus
     /// Base class for message based grains identifiable by <see cref="String"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWithStringId : MessageBasedGrain, IHaveStringId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubStringId
+        #endif	
     {
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(String id)
+        void IStubStringId.SetId(String id)
         {
 			explicitId = id;
 		}
@@ -917,14 +949,14 @@ namespace Orleans.Bus
     /// Base class for persistent message based grains identifiable by <see cref="Guid"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWithGuidId<TState> : MessageBasedGrain<TState>, IHaveGuidId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubGuidId
+        #endif
 	        where TState : class, IGrainState
     {
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Guid id)
+        void IStubGuidId.SetId(Guid id)
         {
 			explicitId = id;
 		}
@@ -953,14 +985,14 @@ namespace Orleans.Bus
     /// Base class for persistent message based grains identifiable by <see cref="Int64"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWithInt64Id<TState> : MessageBasedGrain<TState>, IHaveInt64Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStubInt64Id
+        #endif
 	        where TState : class, IGrainState
     {
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Int64 id)
+        void IStubInt64Id.SetId(Int64 id)
         {
 			explicitId = id;
 		}
@@ -989,14 +1021,14 @@ namespace Orleans.Bus
     /// Base class for persistent message based grains identifiable by <see cref="String"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWithStringId<TState> : MessageBasedGrain<TState>, IHaveStringId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubStringId
+        #endif
 	        where TState : class, IGrainState
     {
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(String id)
+        void IStubStringId.SetId(String id)
         {
 			explicitId = id;
 		}
@@ -1021,94 +1053,47 @@ namespace Orleans.Bus
 		
     }
 
-	/// <summary>
-    /// Base class for all kinds of observable message based grains
-    /// </summary>
-    public abstract class ObservableMessageBasedGrain : MessageBasedGrain, IObservableGrain
-    {
-        /// <summary>
-        /// Default instance of <see cref="IObserverCollection"/> of the current grain.
-        /// </summary>
-        /// <remarks>You can substitute it within a test harness</remarks>
-        public IObserverCollection Observers = new ObserverCollection();
-
-        /// <summary>
-        /// Attaches given observer to receive events of the specified type 
-        /// </summary>
-        /// <param name="o">Client observer proxy</param>
-        /// <param name="e">The type of event</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Task Attach(Observes o, Type e)
-        {
-            Observers.Attach(o, e);
-            return TaskDone.Done;
-        }
-
-        /// <summary>
-        /// Detaches given observer from receiving events of the specified type 
-        /// </summary>
-        /// <param name="o">Client observer proxy</param>
-        /// <param name="e">The type of event</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Task Detach(Observes o, Type e)
-        {
-            Observers.Detach(o, e);
-            return TaskDone.Done;
-        }
-    }
-
-    /// <summary>
-    /// Base class for all kinds of persitent observable message based grains
-    /// </summary>
-    public abstract class ObservableMessageBasedGrain<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain
-        where TGrainState : class, IGrainState
-    {
-        /// <summary>
-        /// Default instance of <see cref="IObserverCollection"/> of the current grain.
-        /// </summary>
-        /// <remarks>You can substitute it within a test harness</remarks>
-        public IObserverCollection Observers = new ObserverCollection();
-
-        /// <summary>
-        /// Attaches given observer to receive events of the specified type 
-        /// </summary>
-        /// <param name="o">Client observer proxy</param>
-        /// <param name="e">The type of event</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Task Attach(Observes o, Type e)
-        {
-            Observers.Attach(o, e);
-            return TaskDone.Done;
-        }
-
-        /// <summary>
-        /// Detaches given observer from receiving events of the specified type 
-        /// </summary>
-        /// <param name="o">Client observer proxy</param>
-        /// <param name="e">The type of event</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Task Detach(Observes o, Type e)
-        {
-            Observers.Detach(o, e);
-            return TaskDone.Done;
-        }
-    }
-
     /// <summary>
     /// Base class for observable message based grains identifiable by <see cref="Guid"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWithGuidId : ObservableMessageBasedGrain, IHaveGuidId
+    public abstract class ObservableMessageBasedGrainWithGuidId : MessageBasedGrain, IObservableGrain, IHaveGuidId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStubGuidId
+        #endif
     {
+        readonly IObserverCollection observers = 
+        #if GRAIN_STUBBING_ENABLED
+            new ObserverCollectionStub();
+        #else
+            new ObserverCollection();
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
+        {
+            get {return (ObserverCollectionStub)observers; }
+        }
+        
+        #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Attach(Observes o, Type e)
+        {
+            observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Detach(Observes o, Type e)
+        {
+            observers.Detach(o, e);
+            return TaskDone.Done;
+        }
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Guid id)
+        void IStubGuidId.SetId(Guid id)
         {
 			explicitId = id;
 		}
@@ -1140,7 +1125,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Id(), e);
+            observers.Notify(Id(), e);
         }
 		
     }
@@ -1148,14 +1133,44 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for observable message based grains identifiable by <see cref="Int64"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWithInt64Id : ObservableMessageBasedGrain, IHaveInt64Id
+    public abstract class ObservableMessageBasedGrainWithInt64Id : MessageBasedGrain, IObservableGrain, IHaveInt64Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStubInt64Id
+        #endif
     {
+        readonly IObserverCollection observers = 
+        #if GRAIN_STUBBING_ENABLED
+            new ObserverCollectionStub();
+        #else
+            new ObserverCollection();
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
+        {
+            get {return (ObserverCollectionStub)observers; }
+        }
+        
+        #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Attach(Observes o, Type e)
+        {
+            observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Detach(Observes o, Type e)
+        {
+            observers.Detach(o, e);
+            return TaskDone.Done;
+        }
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Int64 id)
+        void IStubInt64Id.SetId(Int64 id)
         {
 			explicitId = id;
 		}
@@ -1187,7 +1202,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Id(), e);
+            observers.Notify(Id(), e);
         }
 		
     }
@@ -1195,14 +1210,44 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for observable message based grains identifiable by <see cref="String"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWithStringId : ObservableMessageBasedGrain, IHaveStringId
+    public abstract class ObservableMessageBasedGrainWithStringId : MessageBasedGrain, IObservableGrain, IHaveStringId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStubStringId
+        #endif
     {
+        readonly IObserverCollection observers = 
+        #if GRAIN_STUBBING_ENABLED
+            new ObserverCollectionStub();
+        #else
+            new ObserverCollection();
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
+        {
+            get {return (ObserverCollectionStub)observers; }
+        }
+        
+        #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Attach(Observes o, Type e)
+        {
+            observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Detach(Observes o, Type e)
+        {
+            observers.Detach(o, e);
+            return TaskDone.Done;
+        }
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(String id)
+        void IStubStringId.SetId(String id)
         {
 			explicitId = id;
 		}
@@ -1234,7 +1279,7 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Id(), e);
+            observers.Notify(Id(), e);
         }
 		
     }
@@ -1242,15 +1287,45 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for persistent observable message based grains identifiable by <see cref="Guid"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWithGuidId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveGuidId
+    public abstract class ObservableMessageBasedGrainWithGuidId<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHaveGuidId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStubGuidId
+        #endif
         where TGrainState : class, IGrainState
     {
+        readonly IObserverCollection observers = 
+        #if GRAIN_STUBBING_ENABLED
+            new ObserverCollectionStub();
+        #else
+            new ObserverCollection();
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
+        {
+            get {return (ObserverCollectionStub)observers; }
+        }
+        
+        #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Attach(Observes o, Type e)
+        {
+            observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Detach(Observes o, Type e)
+        {
+            observers.Detach(o, e);
+            return TaskDone.Done;
+        }
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Guid id)
+        void IStubGuidId.SetId(Guid id)
         {
 			explicitId = id;
 		}
@@ -1282,22 +1357,52 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Id(), e);
+            observers.Notify(Id(), e);
         }
 	}
 
     /// <summary>
     /// Base class for persistent observable message based grains identifiable by <see cref="Int64"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWithInt64Id<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveInt64Id
+    public abstract class ObservableMessageBasedGrainWithInt64Id<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHaveInt64Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStubInt64Id
+        #endif
         where TGrainState : class, IGrainState
     {
+        readonly IObserverCollection observers = 
+        #if GRAIN_STUBBING_ENABLED
+            new ObserverCollectionStub();
+        #else
+            new ObserverCollection();
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
+        {
+            get {return (ObserverCollectionStub)observers; }
+        }
+        
+        #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Attach(Observes o, Type e)
+        {
+            observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Detach(Observes o, Type e)
+        {
+            observers.Detach(o, e);
+            return TaskDone.Done;
+        }
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(Int64 id)
+        void IStubInt64Id.SetId(Int64 id)
         {
 			explicitId = id;
 		}
@@ -1329,22 +1434,52 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Id(), e);
+            observers.Notify(Id(), e);
         }
 	}
 
     /// <summary>
     /// Base class for persistent observable message based grains identifiable by <see cref="String"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWithStringId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveStringId
+    public abstract class ObservableMessageBasedGrainWithStringId<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHaveStringId
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStubStringId
+        #endif
         where TGrainState : class, IGrainState
     {
+        readonly IObserverCollection observers = 
+        #if GRAIN_STUBBING_ENABLED
+            new ObserverCollectionStub();
+        #else
+            new ObserverCollection();
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
+        {
+            get {return (ObserverCollectionStub)observers; }
+        }
+        
+        #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Attach(Observes o, Type e)
+        {
+            observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Task IObservableGrain.Detach(Observes o, Type e)
+        {
+            observers.Detach(o, e);
+            return TaskDone.Done;
+        }
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(String id)
+        void IStubStringId.SetId(String id)
         {
 			explicitId = id;
 		}
@@ -1376,114 +1511,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Id(), e);
+            observers.Notify(Id(), e);
         }
 	}
 
-	#if GRAIN_STUBBING_ENABLED
-
-    public class RegisteredTimer<TTimerState>
-    {
-        public readonly string Name;
-        public readonly Func<TTimerState, Task> Callback;
-        public readonly object State;
-        public readonly TimeSpan Due;
-        public readonly TimeSpan Period;
-
-        public RegisteredTimer(string name, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
-        {
-            Name = name;
-            Callback = callback;
-            State = state;
-            Due = due;
-            Period = period;
-        }
-    }
-
-    public class UnregisteredTimer
-    {
-        public readonly string Name;
-
-        public UnregisteredTimer(string name)
-        {
-            Name = name;
-        }
-    }
-
-    public class RegisteredReminder
-    {
-        public readonly string Name;
-        public readonly TimeSpan Due;
-        public readonly TimeSpan Period;
-
-        public RegisteredReminder(string name, TimeSpan due, TimeSpan period)
-        {
-            Name = name;
-            Due = due;
-            Period = period;
-        }
-    }
-
-    public class UnregisteredReminder
-    {
-        public readonly string Name;
-
-        public UnregisteredReminder(string name)
-        {
-            Name = name;
-        }
-    }
-
-    public class RequestedDeactivationOnIdle
-    {}
-
-    public class RequestedDeactivationDelay
-    {
-        public readonly TimeSpan Period;
-
-        public RequestedDeactivationDelay(TimeSpan period)
-        {
-            Period = period;
-        }
-    }
-
-    class TimerStub : IOrleansTimer
-    {
-        readonly string name;
-
-        public TimerStub(string name)
-        {
-            this.name = name;
-        }
-
-        public string Name
-        {
-            get { return name; }
-        }
-
-        public void Dispose()
-        {}
-    }
-
-    class ReminderStub : IOrleansReminder
-    {
-        readonly string name;
-
-        public ReminderStub(string name)
-        {
-            this.name = name;
-        }
-
-        public string Name
-        {
-            get { return name; }
-        }
-
-        string IOrleansReminder.ReminderName
-        {
-            get { return name; }
-        }
-    }
-
-#endif
 }

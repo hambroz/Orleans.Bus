@@ -1,7 +1,18 @@
-﻿        /// <summary>
-        /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
-        /// </summary>
-        public IMessageBus Bus = MessageBus.Instance;
+﻿        IMessageBus bus = 
+        #if GRAIN_STUBBING_ENABLED
+            new MessageBusStub();
+        #else
+            MessageBus.Instance;
+        #endif
+
+        #if GRAIN_STUBBING_ENABLED
+        
+        MessageBusStub IStubbedMessageGrain.Bus
+        {
+            get {return (MessageBusStub)bus; }
+        }
+        
+        #endif
 
         #region Message exchange shortcuts
 
@@ -15,7 +26,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(Guid id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
         
         /// <summary>
@@ -28,7 +39,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(long id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
         
         /// <summary>
@@ -41,7 +52,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task Send<TCommand>(string id, TCommand command)
         {
-            return Bus.Send(id, command);
+            return bus.Send(id, command);
         }
 
         /// <summary>
@@ -55,7 +66,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
         
         /// <summary>
@@ -70,7 +81,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(long id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
         
         /// <summary>
@@ -84,7 +95,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Task<TResult> Query<TQuery, TResult>(string id, TQuery query)        
         {
-            return Bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TQuery, TResult>(id, query);
         }
 
         #endregion
@@ -137,11 +148,12 @@
         
         #if GRAIN_STUBBING_ENABLED
 
-        /// <summary>
-        /// Track all instance-level events (like timer registrations, deactivation request, etc). Useful for testing purposes. 
-        /// Works only if build specifies <c>GRAIN_STUBBING_ENABLED</c> constant!
-        /// </summary>
-        public IList<object> Dispatched = new List<object>();
+        List<GrainAuditEvent> dispatched = new List<GrainAuditEvent>();
+
+        List<GrainAuditEvent> IStubbedMessageGrain.Dispatched
+        {
+            get {return dispatched; }
+        }
 
         #endif
 
@@ -196,7 +208,7 @@
             #if GRAIN_STUBBING_ENABLED
 
             timer = new TimerStub(name);
-            Dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
+            dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
             
             #else
             timer = base.RegisterTimer(s => callback((TTimerState) s), state, due, period);
@@ -215,7 +227,7 @@
             timer.Dispose();
 
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new UnregisteredTimer(name));
+            dispatched.Add(new UnregisteredTimer(name));
             #endif
         }
 
@@ -272,7 +284,7 @@
             var reminder = new ReminderStub(name);
             reminders[name] = reminder;
 
-            Dispatched.Add(new RegisteredReminder(name, due, period));
+            dispatched.Add(new RegisteredReminder(name, due, period));
             return TaskDone.Done;
             
             #else
@@ -294,7 +306,7 @@
             #if GRAIN_STUBBING_ENABLED
             
             reminders.Remove(name);
-            Dispatched.Add(new UnregisteredReminder(name));
+            dispatched.Add(new UnregisteredReminder(name));
             return TaskDone.Done;
             
             #else
@@ -355,7 +367,7 @@
         protected new void DeactivateOnIdle()
         {
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new RequestedDeactivationOnIdle());
+            dispatched.Add(new RequestedDeactivationOnIdle());
             #else
             base.DeactivateOnIdle();
             #endif
@@ -374,7 +386,7 @@
         protected new void DelayDeactivation(TimeSpan period)
         {
             #if GRAIN_STUBBING_ENABLED
-            Dispatched.Add(new RequestedDeactivationDelay(period));
+            dispatched.Add(new RequestedDeactivationDelay(period));
             #else
             base.DelayDeactivation(period);
             #endif

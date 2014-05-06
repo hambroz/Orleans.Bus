@@ -10,12 +10,19 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
+#if GRAIN_STUBBING_ENABLED
+using Orleans.Bus.Stubs;
+#endif 
+
 namespace Orleans.Bus
 {
     /// <summary>
     /// Base class for all kinds of message based grains
     /// </summary>
     public abstract class MessageBasedGrain : GrainBase, IGrain
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedMessageGrain
+        #endif
     {
 <#@ include file="GrainCommon.cs" #>
 	}
@@ -23,17 +30,18 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for all kinds of persistent message based grains
     /// </summary>
-    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain 
+    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedMessageGrain
+            , IStubState<TState>
+        #endif	 
         where TState : class, IGrainState
     {
 <#@ include file="GrainCommon.cs" #>
 		        
 		#if GRAIN_STUBBING_ENABLED
 
-		/// <summary>
-        /// Sets grain's state for testing purposes
-        /// </summary>
-        public void SetState(TState state)
+        void IStubState<TState>.SetState(TState state)
         {
 			#if DEBUG
 			explicitState = state;
@@ -59,6 +67,9 @@ namespace Orleans.Bus
     /// Base class for message based grains identifiable by <see cref="<#= id #>"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWith<#= id #>Id : MessageBasedGrain, IHave<#= id #>Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStub<#= id #>Id
+        #endif	
     {
 <# WriteIdBlock(id); #>
     }
@@ -69,35 +80,26 @@ namespace Orleans.Bus
     /// Base class for persistent message based grains identifiable by <see cref="<#= id #>"/> identifier
     /// </summary>
     public abstract class MessageBasedGrainWith<#= id #>Id<TState> : MessageBasedGrain<TState>, IHave<#= id #>Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStub<#= id #>Id
+        #endif
 	        where TState : class, IGrainState
     {
 <# WriteIdBlock(id); #>		
     }
 
 <#}#>
-	/// <summary>
-    /// Base class for all kinds of observable message based grains
-    /// </summary>
-    public abstract class ObservableMessageBasedGrain : MessageBasedGrain, IObservableGrain
-    {
-<#@ include file="ObservableGrainCommon.cs" #>
-    }
-
-    /// <summary>
-    /// Base class for all kinds of persitent observable message based grains
-    /// </summary>
-    public abstract class ObservableMessageBasedGrain<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain
-        where TGrainState : class, IGrainState
-    {
-<#@ include file="ObservableGrainCommon.cs" #>
-    }
-
 <#foreach (var id in ids) {#>
     /// <summary>
     /// Base class for observable message based grains identifiable by <see cref="<#= id #>"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWith<#= id #>Id : ObservableMessageBasedGrain, IHave<#= id #>Id
+    public abstract class ObservableMessageBasedGrainWith<#= id #>Id : MessageBasedGrain, IObservableGrain, IHave<#= id #>Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStub<#= id #>Id
+        #endif
     {
+<#@ include file="ObservableGrainCommon.cs" #>
 <# WriteObservableBlock(id); #>		
     }
 
@@ -106,24 +108,25 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for persistent observable message based grains identifiable by <see cref="<#= id #>"/> identifier
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWith<#= id #>Id<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHave<#= id #>Id
+    public abstract class ObservableMessageBasedGrainWith<#= id #>Id<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHave<#= id #>Id
+        #if GRAIN_STUBBING_ENABLED
+            , IStubbedObservableMessageGrain
+            , IStub<#= id #>Id
+        #endif
         where TGrainState : class, IGrainState
     {
+<#@ include file="ObservableGrainCommon.cs" #>
 <# WriteObservableBlock(id); #>
 	}
 
 <#}#>
-<#@ include file="LocalCalls.cs" #>
 }
 <#+
 private void WriteIdBlock(string id)
 {#>
 		#if GRAIN_STUBBING_ENABLED
 		
-		/// <summary>
-        /// Sets grain's id for testing purposes
-        /// </summary>
-        public void SetId(<#= id #> id)
+        void IStub<#= id #>Id.SetId(<#= id #> id)
         {
 			explicitId = id;
 		}
@@ -160,7 +163,7 @@ private void WriteNotifyBlock()
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Notify<TEvent>(TEvent e)
         {
-            Observers.Notify(Id(), e);
+            observers.Notify(Id(), e);
         }
 <#+
 }

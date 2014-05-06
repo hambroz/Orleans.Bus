@@ -1,6 +1,13 @@
-﻿	#if GRAIN_STUBBING_ENABLED
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 
-    public class RegisteredTimer<TTimerState>
+namespace Orleans.Bus.Stubs
+{
+    public abstract class GrainAuditEvent
+    {}
+
+    public class RegisteredTimer<TTimerState> : GrainAuditEvent
     {
         public readonly string Name;
         public readonly Func<TTimerState, Task> Callback;
@@ -18,7 +25,7 @@
         }
     }
 
-    public class UnregisteredTimer
+    public class UnregisteredTimer : GrainAuditEvent
     {
         public readonly string Name;
 
@@ -28,7 +35,7 @@
         }
     }
 
-    public class RegisteredReminder
+    public class RegisteredReminder : GrainAuditEvent
     {
         public readonly string Name;
         public readonly TimeSpan Due;
@@ -42,7 +49,7 @@
         }
     }
 
-    public class UnregisteredReminder
+    public class UnregisteredReminder : GrainAuditEvent
     {
         public readonly string Name;
 
@@ -52,10 +59,10 @@
         }
     }
 
-    public class RequestedDeactivationOnIdle
+    public class RequestedDeactivationOnIdle : GrainAuditEvent
     {}
 
-    public class RequestedDeactivationDelay
+    public class RequestedDeactivationDelay : GrainAuditEvent
     {
         public readonly TimeSpan Period;
 
@@ -64,43 +71,4 @@
             Period = period;
         }
     }
-
-    class TimerStub : IOrleansTimer
-    {
-        readonly string name;
-
-        public TimerStub(string name)
-        {
-            this.name = name;
-        }
-
-        public string Name
-        {
-            get { return name; }
-        }
-
-        public void Dispose()
-        {}
-    }
-
-    class ReminderStub : IOrleansReminder
-    {
-        readonly string name;
-
-        public ReminderStub(string name)
-        {
-            this.name = name;
-        }
-
-        public string Name
-        {
-            get { return name; }
-        }
-
-        string IOrleansReminder.ReminderName
-        {
-            get { return name; }
-        }
-    }
-
-#endif
+}
