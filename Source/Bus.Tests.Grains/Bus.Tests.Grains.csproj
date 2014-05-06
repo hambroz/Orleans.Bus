@@ -56,7 +56,6 @@
     <Compile Include="Infrastructure\TestGrainWithLongId.cs" />
     <Compile Include="Infrastructure\TestGrainWithStringId.cs" />
     <Compile Include="Infrastructure\TestObservableGrain.cs" />
-    <Compile Include="Infrastructure\TestPersistentGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestObservableMessageBasedGrain.cs" />
     <Compile Include="TestMessageBasedGrain.cs" />

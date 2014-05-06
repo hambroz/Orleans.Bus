@@ -9,32 +9,14 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for all kinds of message based grains
     /// </summary>
-    public abstract class MessageBasedGrain : GrainBase, IGrain, IGrainInstance
+    public abstract class MessageBasedGrain : GrainBase, IGrain
     {
         /// <summary>
         /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
         /// </summary>
         public IMessageBus Bus = MessageBus.Instance;
-        
-        /// <summary>
-        /// A mockabe instance of this grain. You can substitute it within a test harness
-        /// </summary>
-        /// <remarks>
-        /// WARNING! This will work only if DEBUG constant is defined for build.
-        /// In RELEASE mode all magic will gone, and original GrainBase methods 
-        /// will be bound by the comiler
-        /// </remarks>
-        public IGrainInstance Instance;
 
-        /// <summary>
-        /// Default constructor
-        /// </summary>
-        protected MessageBasedGrain()
-        {
-            Instance = this;
-        }
-
-        #region Shortcuts
+        #region Message exchange shortcuts
 
         /// <summary>
         /// Sends command message to a grain with the given <see cref="Guid"/> id
@@ -120,8 +102,69 @@ namespace Orleans.Bus
 
         #endregion
 
-        #if DEBUG
+        #region Obsolete base class methods
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="RegisterTimer{TTimerState}(string,System.Func{TTimerState,System.Threading.Tasks.Task}, TTimerState, TimeSpan,TimeSpan)"/> overload which enables named Timers 
+        /// and  automatically tracks all registered timers
+        /// </summary>
+        protected new IOrleansTimer RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
+        {
+            throw new InvalidOperationException("Use RegisterTimer() overload which automatically tracks all registered timers");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="RegisterReminder"/> overload which 
+        /// automatically tracks all registered reminders
+        /// </summary>
+        protected new Task<IOrleansReminder> RegisterOrUpdateReminder(string reminderName, TimeSpan dueTime, TimeSpan period)
+        {
+            throw new InvalidOperationException("Use RegisterReminder() overload which automatically tracks all registered reminders");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="UnregisterReminder(string)"/> overload which takes reminder name argument
+        /// </summary>
+        protected new Task UnregisterReminder(IOrleansReminder reminder)
+        {
+            throw new InvalidOperationException("Use UnregisterReminder() overload which takes reminder name argument");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use combination of <see cref="IsReminderRegistered"/> method and <see cref="UnregisterReminder(string)"/> overload to check and unregister reminder
+        /// </summary>
+        protected new Task<IOrleansReminder> GetReminder(string reminderName)
+        {
+            throw new InvalidOperationException("Use combination of IsReminderRegistered() method and UnregisterReminder() overload to check and unregister reminder");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="RegisteredReminders"/> method to get names of all currently registered reminders
+        /// </summary>
+        protected new Task<List<IOrleansReminder>> GetReminders()
+        {
+            throw new InvalidOperationException("Use RegisteredReminders() method to get names of all currently registered reminders");
+        }
+
+        #endregion
         
+        #if GRAIN_STUBBING_ENABLED
+
+        /// <summary>
+        /// Track all instance-level events (like timer registrations, deactivation request, etc). Useful for testing purposes. 
+        /// Works only if build specifies <c>GRAIN_STUBBING_ENABLED</c> constant!
+        /// </summary>
+        public IList<object> Dispatched = new List<object>();
+
+        #endif
+
+        #region Timers
+
+        /// <summary>
+        /// Tracks all currently registered timers
+        /// </summary>
+        readonly IDictionary<string, IOrleansTimer> timers = new Dictionary<string, IOrleansTimer>();
+
         /// <summary>
         /// Registers a timer to send periodic callbacks to this grain.
         /// 
@@ -136,95 +179,185 @@ namespace Orleans.Bus
         /// </para>
         /// 
         /// <para>
-        /// Until the Task returned from the asyncCallback is resolved,
+        /// Until the Task returned from the <paramref name="callback"/> is resolved,
         ///             the next timer tick will not be scheduled.
         ///             That is to say, timer callbacks never interleave their turns.
         /// 
         /// </para>
         /// 
         /// <para>
-        /// The timer may be stopped at any time by calling the <c>Dispose</c> method
-        ///             on the timer handle returned from this call.
+        /// The timer may be stopped at any time by calling the <see cref="UnregisterTimer(string)"/> method
         /// 
         /// </para>
         /// 
         /// <para>
-        /// Any exceptions thrown by or faulted Task's returned from the asyncCallback
+        /// Any exceptions thrown by or faulted Task's returned from the  <paramref name="callback"/>
         ///             will be logged, but will not prevent the next timer tick from being queued.
         /// 
         /// </para>
         /// 
         /// </remarks>
-        /// <param name="asyncCallback">Callback function to be invoked when timr ticks.</param>
-        /// <param name="state">State object that will be passed as argument when calling the asyncCallback.</param>
-        /// <param name="dueTime">Due time for first timer tick.</param>
+        /// <param name="name">Name of the timer</param>
+        /// <param name="callback">Callback function to be invoked when timer ticks.</param>
+        /// <param name="state">State object that will be passed as argument when calling the  <paramref name="callback"/>.</param>
+        /// <param name="due">Due time for first timer tick.</param>
         /// <param name="period">Period of subsequent timer ticks.</param>
-        /// <returns>
-        /// Handle for this Timer.
-        /// </returns>
-        /// <seealso cref="T:Orleans.IOrleansTimer"/>
-        protected new IOrleansTimer RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
+        protected void RegisterTimer<TTimerState>(string name, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
         {
-           return Instance.RegisterTimer(asyncCallback, state, dueTime, period);
+            IOrleansTimer timer;
+
+            #if GRAIN_STUBBING_ENABLED
+
+            timer = new TimerStub(name);
+            Dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
+            
+            #else
+            timer = base.RegisterTimer(s => callback((TTimerState) s), state, due, period);
+            #endif
+
+            timers.Add(name, timer);
         }
 
         /// <summary>
-        /// Registers a persistent, reliable reminder to send regular notifications (reminders) to the grain.
-        ///             The grain must implement the <c>Orleans.IRemindable</c> interface, and reminders for this grain will be sent to the <c>ReceiveReminder</c> callback method.
+        /// Unregister previously registered timer. 
+        /// </summary>
+        /// <param name="name">Name of the timer</param>
+        protected void UnregisterTimer(string name)
+        {
+            var timer = timers[name];
+            timer.Dispose();
+
+            #if GRAIN_STUBBING_ENABLED
+            Dispatched.Add(new UnregisteredTimer(name));
+            #endif
+        }
+
+        /// <summary>
+        /// Checks whether timer with the given name was registered before
+        /// </summary>
+        /// <param name="name">Name of the timer</param>
+        /// <returns><c>true</c> if timer was the give name was previously registered, <c>false</c> otherwise </returns>
+        protected bool IsTimerRegistered(string name)
+        {
+            return timers.ContainsKey(name);
+        }
+
+        /// <summary>
+        /// Returns names of all currently registered timers
+        /// </summary>
+        /// <returns>A sequence of <see cref="string"/> names</returns>
+        protected IEnumerable<string> RegisteredTimers()
+        {
+            return timers.Keys;
+        }
+
+        #endregion
+
+        #region Reminders
+
+        /// <summary>
+        /// Tracks all currently registered reminders
+        /// </summary>
+        readonly IDictionary<string, IOrleansReminder> reminders = new Dictionary<string, IOrleansReminder>();
+
+        /// <summary>
+        /// Registers a persistent, reliable reminder to send regular notifications (Reminders) to the grain.
+        ///             The grain must implement the <c>Orleans.IRemindable</c> interface, and Reminders for this grain will be sent to the <c>ReceiveReminder</c> callback method.
         ///             If the current grain is deactivated when the timer fires, a new activation of this grain will be created to receive this reminder.
         ///             If an existing reminder with the same name already exists, that reminder will be overwritten with this new reminder.
         ///             Reminders will always be received by one activation of this grain, even if multiple activations exist for this grain.
         /// 
         /// </summary>
-        /// <param name="reminderName">Name of this reminder</param>
-        /// <param name="dueTime">Due time for this reminder</param>
+        /// <param name="name">Name of this reminder</param>
+        /// <param name="due">Due time for this reminder</param>
         /// <param name="period">Frequence period for this reminder</param>
         /// <returns>
-        /// Promise for Reminder handle.
+        /// Promise for Reminder registration.
         /// </returns>
-        protected new Task<IOrleansReminder> RegisterOrUpdateReminder(string reminderName, TimeSpan dueTime, TimeSpan period)
+        protected 
+             #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task RegisterReminder(string name, TimeSpan due, TimeSpan period)
         {
-            return Instance.RegisterOrUpdateReminder(reminderName, dueTime, period);
+            #if GRAIN_STUBBING_ENABLED
+            
+            var reminder = new ReminderStub(name);
+            reminders[name] = reminder;
+
+            Dispatched.Add(new RegisteredReminder(name, due, period));
+            return TaskDone.Done;
+            
+            #else
+            var reminder = await base.RegisterOrUpdateReminder(name, due, period);
+            reminders[name] = reminder;
+            #endif
         }
 
         /// <summary>
-        /// Unregisters a previously registered reminder.
-        /// 
+        /// Unregister previously registered peristent reminder if any
         /// </summary>
-        /// <param name="reminder">Reminder to unregister.</param>
-        /// <returns>
-        /// Completion promise for this operation.
-        /// </returns>
-        protected new Task UnregisterReminder(IOrleansReminder reminder)
+        /// <param name="name">Name of the reminder</param>
+        protected
+            #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task UnregisterReminder(string name)
         {
-            return Instance.UnregisterReminder(reminder);
+            #if GRAIN_STUBBING_ENABLED
+            
+            reminders.Remove(name);
+            Dispatched.Add(new UnregisteredReminder(name));
+            return TaskDone.Done;
+            
+            #else
+            
+            reminders.Remove(name);
+            var reminder = await base.GetReminder(name);
+            if (reminder != null)
+                await base.UnregisterReminder(reminder);
+
+            #endif
         }
 
         /// <summary>
-        /// Returns a previously registered reminder.
-        /// 
+        /// Checks whether reminder with the given name is currently registered
         /// </summary>
-        /// <param name="reminderName">Reminder to return</param>
-        /// <returns>
-        /// Promise for Reminder handle.
-        /// </returns>
-        protected new Task<IOrleansReminder> GetReminder(string reminderName)
+        /// <param name="name">Name of the reminder</param>
+        /// <returns><c>true</c> if reminder with the give name is currently registered, <c>false</c> otherwise </returns>
+        protected
+            #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task<bool> IsReminderRegistered(string name)
         {
-            return Instance.GetReminder(reminderName);
+            #if GRAIN_STUBBING_ENABLED
+            return Task.FromResult(reminders.ContainsKey(name));
+            #else
+            return reminders.ContainsKey(name) || (await base.GetReminder(name)) != null;
+            #endif
         }
 
         /// <summary>
-        /// Returns a list of all reminders registered by the grain.
-        /// 
+        /// Returns names of all currently registered reminders
         /// </summary>
-        /// 
-        /// <returns>
-        /// Promise for list of Reminders registered for this grain.
-        /// </returns>
-        protected new Task<List<IOrleansReminder>> GetReminders()
+        /// <returns>A sequence of <see cref="string"/> names</returns>
+        protected
+            #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task<IEnumerable<string>> RegisteredReminders()
         {
-            return Instance.GetReminders();
+            #if GRAIN_STUBBING_ENABLED
+            return Task.FromResult(reminders.Keys.AsEnumerable());
+            #else
+            return (await base.GetReminders()).Select(x => x.ReminderName);
+            #endif
         }
+
+        #endregion
+
+        #region Deactivation
 
         /// <summary>
         /// Deactivate this activation of the grain after the current grain method call is completed.
@@ -234,59 +367,30 @@ namespace Orleans.Bus
         /// </summary>
         protected new void DeactivateOnIdle()
         {
-            Instance.DeactivateOnIdle();
+            #if GRAIN_STUBBING_ENABLED
+            Dispatched.Add(new RequestedDeactivationOnIdle());
+            #else
+            base.DeactivateOnIdle();
+            #endif
         }
 
         /// <summary>
         /// Delay Deactivation of this activation at least for the specified time duration.
-        ///             A positive <c>timeSpan</c> value means “prevent GC of this activation for that time span”.
-        ///             A negative <c>timeSpan</c> value means “unlock, and make this activation available for GC again”.
         ///             DeactivateOnIdle method would undo / override any current “keep alive” setting,
         ///             making this grain immediately available  for deactivation.
         /// 
         /// </summary>
-        protected new void DelayDeactivation(TimeSpan timeSpan)
+        /// <param name="period">
+        /// <para>A positive value means “prevent GC of this activation for that time span”</para> 
+        /// <para>A negative value means “unlock, and make this activation available for GC again”</para>
+        /// </param>
+        protected new void DelayDeactivation(TimeSpan period)
         {
-            Instance.DelayDeactivation(timeSpan);
-        }
-
-        #endif
-
-        #region IGrainInstance
-
-        IOrleansTimer IGrainInstance.RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
-        {
-            return base.RegisterTimer(asyncCallback, state, dueTime, period);
-        }
-
-        Task<IOrleansReminder> IGrainInstance.RegisterOrUpdateReminder(string reminderName, TimeSpan dueTime, TimeSpan period)
-        {
-            return base.RegisterOrUpdateReminder(reminderName, dueTime, period);
-        }
-
-        Task IGrainInstance.UnregisterReminder(IOrleansReminder reminder)
-        {
-            return base.UnregisterReminder(reminder);
-        }
-
-        Task<IOrleansReminder> IGrainInstance.GetReminder(string reminderName)
-        {
-            return base.GetReminder(reminderName);
-        }
-
-        Task<List<IOrleansReminder>> IGrainInstance.GetReminders()
-        {
-            return base.GetReminders();
-        }
-
-        void IGrainInstance.DeactivateOnIdle()
-        {
-            base.DeactivateOnIdle();
-        }
-
-        void IGrainInstance.DelayDeactivation(TimeSpan timeSpan)
-        {
-            base.DelayDeactivation(timeSpan);
+            #if GRAIN_STUBBING_ENABLED
+            Dispatched.Add(new RequestedDeactivationDelay(period));
+            #else
+            base.DelayDeactivation(period);
+            #endif
         }
 
         #endregion
@@ -295,33 +399,15 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for all kinds of persistent message based grains
     /// </summary>
-    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain, IGrainInstance 
+    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain 
         where TState : class, IGrainState
     {
         /// <summary>
         /// An instance of <see cref="IMessageBus"/> pointing to global instance by default
         /// </summary>
         public IMessageBus Bus = MessageBus.Instance;
-        
-        /// <summary>
-        /// A mockabe instance of this grain. You can substitute it within a test harness
-        /// </summary>
-        /// <remarks>
-        /// WARNING! This will work only if DEBUG constant is defined for build.
-        /// In RELEASE mode all magic will gone, and original GrainBase methods 
-        /// will be bound by the comiler
-        /// </remarks>
-        public IGrainInstance Instance;
 
-        /// <summary>
-        /// Default constructor
-        /// </summary>
-        protected MessageBasedGrain()
-        {
-            Instance = this;
-        }
-
-        #region Shortcuts
+        #region Message exchange shortcuts
 
         /// <summary>
         /// Sends command message to a grain with the given <see cref="Guid"/> id
@@ -407,8 +493,69 @@ namespace Orleans.Bus
 
         #endregion
 
-        #if DEBUG
+        #region Obsolete base class methods
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="RegisterTimer{TTimerState}(string,System.Func{TTimerState,System.Threading.Tasks.Task}, TTimerState, TimeSpan,TimeSpan)"/> overload which enables named Timers 
+        /// and  automatically tracks all registered timers
+        /// </summary>
+        protected new IOrleansTimer RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
+        {
+            throw new InvalidOperationException("Use RegisterTimer() overload which automatically tracks all registered timers");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="RegisterReminder"/> overload which 
+        /// automatically tracks all registered reminders
+        /// </summary>
+        protected new Task<IOrleansReminder> RegisterOrUpdateReminder(string reminderName, TimeSpan dueTime, TimeSpan period)
+        {
+            throw new InvalidOperationException("Use RegisterReminder() overload which automatically tracks all registered reminders");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="UnregisterReminder(string)"/> overload which takes reminder name argument
+        /// </summary>
+        protected new Task UnregisterReminder(IOrleansReminder reminder)
+        {
+            throw new InvalidOperationException("Use UnregisterReminder() overload which takes reminder name argument");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use combination of <see cref="IsReminderRegistered"/> method and <see cref="UnregisterReminder(string)"/> overload to check and unregister reminder
+        /// </summary>
+        protected new Task<IOrleansReminder> GetReminder(string reminderName)
+        {
+            throw new InvalidOperationException("Use combination of IsReminderRegistered() method and UnregisterReminder() overload to check and unregister reminder");
+        }
+
+        /// <summary>
+        /// OBSOLETE! Use <see cref="RegisteredReminders"/> method to get names of all currently registered reminders
+        /// </summary>
+        protected new Task<List<IOrleansReminder>> GetReminders()
+        {
+            throw new InvalidOperationException("Use RegisteredReminders() method to get names of all currently registered reminders");
+        }
+
+        #endregion
         
+        #if GRAIN_STUBBING_ENABLED
+
+        /// <summary>
+        /// Track all instance-level events (like timer registrations, deactivation request, etc). Useful for testing purposes. 
+        /// Works only if build specifies <c>GRAIN_STUBBING_ENABLED</c> constant!
+        /// </summary>
+        public IList<object> Dispatched = new List<object>();
+
+        #endif
+
+        #region Timers
+
+        /// <summary>
+        /// Tracks all currently registered timers
+        /// </summary>
+        readonly IDictionary<string, IOrleansTimer> timers = new Dictionary<string, IOrleansTimer>();
+
         /// <summary>
         /// Registers a timer to send periodic callbacks to this grain.
         /// 
@@ -423,95 +570,185 @@ namespace Orleans.Bus
         /// </para>
         /// 
         /// <para>
-        /// Until the Task returned from the asyncCallback is resolved,
+        /// Until the Task returned from the <paramref name="callback"/> is resolved,
         ///             the next timer tick will not be scheduled.
         ///             That is to say, timer callbacks never interleave their turns.
         /// 
         /// </para>
         /// 
         /// <para>
-        /// The timer may be stopped at any time by calling the <c>Dispose</c> method
-        ///             on the timer handle returned from this call.
+        /// The timer may be stopped at any time by calling the <see cref="UnregisterTimer(string)"/> method
         /// 
         /// </para>
         /// 
         /// <para>
-        /// Any exceptions thrown by or faulted Task's returned from the asyncCallback
+        /// Any exceptions thrown by or faulted Task's returned from the  <paramref name="callback"/>
         ///             will be logged, but will not prevent the next timer tick from being queued.
         /// 
         /// </para>
         /// 
         /// </remarks>
-        /// <param name="asyncCallback">Callback function to be invoked when timr ticks.</param>
-        /// <param name="state">State object that will be passed as argument when calling the asyncCallback.</param>
-        /// <param name="dueTime">Due time for first timer tick.</param>
+        /// <param name="name">Name of the timer</param>
+        /// <param name="callback">Callback function to be invoked when timer ticks.</param>
+        /// <param name="state">State object that will be passed as argument when calling the  <paramref name="callback"/>.</param>
+        /// <param name="due">Due time for first timer tick.</param>
         /// <param name="period">Period of subsequent timer ticks.</param>
-        /// <returns>
-        /// Handle for this Timer.
-        /// </returns>
-        /// <seealso cref="T:Orleans.IOrleansTimer"/>
-        protected new IOrleansTimer RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
+        protected void RegisterTimer<TTimerState>(string name, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
         {
-           return Instance.RegisterTimer(asyncCallback, state, dueTime, period);
+            IOrleansTimer timer;
+
+            #if GRAIN_STUBBING_ENABLED
+
+            timer = new TimerStub(name);
+            Dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
+            
+            #else
+            timer = base.RegisterTimer(s => callback((TTimerState) s), state, due, period);
+            #endif
+
+            timers.Add(name, timer);
         }
 
         /// <summary>
-        /// Registers a persistent, reliable reminder to send regular notifications (reminders) to the grain.
-        ///             The grain must implement the <c>Orleans.IRemindable</c> interface, and reminders for this grain will be sent to the <c>ReceiveReminder</c> callback method.
+        /// Unregister previously registered timer. 
+        /// </summary>
+        /// <param name="name">Name of the timer</param>
+        protected void UnregisterTimer(string name)
+        {
+            var timer = timers[name];
+            timer.Dispose();
+
+            #if GRAIN_STUBBING_ENABLED
+            Dispatched.Add(new UnregisteredTimer(name));
+            #endif
+        }
+
+        /// <summary>
+        /// Checks whether timer with the given name was registered before
+        /// </summary>
+        /// <param name="name">Name of the timer</param>
+        /// <returns><c>true</c> if timer was the give name was previously registered, <c>false</c> otherwise </returns>
+        protected bool IsTimerRegistered(string name)
+        {
+            return timers.ContainsKey(name);
+        }
+
+        /// <summary>
+        /// Returns names of all currently registered timers
+        /// </summary>
+        /// <returns>A sequence of <see cref="string"/> names</returns>
+        protected IEnumerable<string> RegisteredTimers()
+        {
+            return timers.Keys;
+        }
+
+        #endregion
+
+        #region Reminders
+
+        /// <summary>
+        /// Tracks all currently registered reminders
+        /// </summary>
+        readonly IDictionary<string, IOrleansReminder> reminders = new Dictionary<string, IOrleansReminder>();
+
+        /// <summary>
+        /// Registers a persistent, reliable reminder to send regular notifications (Reminders) to the grain.
+        ///             The grain must implement the <c>Orleans.IRemindable</c> interface, and Reminders for this grain will be sent to the <c>ReceiveReminder</c> callback method.
         ///             If the current grain is deactivated when the timer fires, a new activation of this grain will be created to receive this reminder.
         ///             If an existing reminder with the same name already exists, that reminder will be overwritten with this new reminder.
         ///             Reminders will always be received by one activation of this grain, even if multiple activations exist for this grain.
         /// 
         /// </summary>
-        /// <param name="reminderName">Name of this reminder</param>
-        /// <param name="dueTime">Due time for this reminder</param>
+        /// <param name="name">Name of this reminder</param>
+        /// <param name="due">Due time for this reminder</param>
         /// <param name="period">Frequence period for this reminder</param>
         /// <returns>
-        /// Promise for Reminder handle.
+        /// Promise for Reminder registration.
         /// </returns>
-        protected new Task<IOrleansReminder> RegisterOrUpdateReminder(string reminderName, TimeSpan dueTime, TimeSpan period)
+        protected 
+             #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task RegisterReminder(string name, TimeSpan due, TimeSpan period)
         {
-            return Instance.RegisterOrUpdateReminder(reminderName, dueTime, period);
+            #if GRAIN_STUBBING_ENABLED
+            
+            var reminder = new ReminderStub(name);
+            reminders[name] = reminder;
+
+            Dispatched.Add(new RegisteredReminder(name, due, period));
+            return TaskDone.Done;
+            
+            #else
+            var reminder = await base.RegisterOrUpdateReminder(name, due, period);
+            reminders[name] = reminder;
+            #endif
         }
 
         /// <summary>
-        /// Unregisters a previously registered reminder.
-        /// 
+        /// Unregister previously registered peristent reminder if any
         /// </summary>
-        /// <param name="reminder">Reminder to unregister.</param>
-        /// <returns>
-        /// Completion promise for this operation.
-        /// </returns>
-        protected new Task UnregisterReminder(IOrleansReminder reminder)
+        /// <param name="name">Name of the reminder</param>
+        protected
+            #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task UnregisterReminder(string name)
         {
-            return Instance.UnregisterReminder(reminder);
+            #if GRAIN_STUBBING_ENABLED
+            
+            reminders.Remove(name);
+            Dispatched.Add(new UnregisteredReminder(name));
+            return TaskDone.Done;
+            
+            #else
+            
+            reminders.Remove(name);
+            var reminder = await base.GetReminder(name);
+            if (reminder != null)
+                await base.UnregisterReminder(reminder);
+
+            #endif
         }
 
         /// <summary>
-        /// Returns a previously registered reminder.
-        /// 
+        /// Checks whether reminder with the given name is currently registered
         /// </summary>
-        /// <param name="reminderName">Reminder to return</param>
-        /// <returns>
-        /// Promise for Reminder handle.
-        /// </returns>
-        protected new Task<IOrleansReminder> GetReminder(string reminderName)
+        /// <param name="name">Name of the reminder</param>
+        /// <returns><c>true</c> if reminder with the give name is currently registered, <c>false</c> otherwise </returns>
+        protected
+            #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task<bool> IsReminderRegistered(string name)
         {
-            return Instance.GetReminder(reminderName);
+            #if GRAIN_STUBBING_ENABLED
+            return Task.FromResult(reminders.ContainsKey(name));
+            #else
+            return reminders.ContainsKey(name) || (await base.GetReminder(name)) != null;
+            #endif
         }
 
         /// <summary>
-        /// Returns a list of all reminders registered by the grain.
-        /// 
+        /// Returns names of all currently registered reminders
         /// </summary>
-        /// 
-        /// <returns>
-        /// Promise for list of Reminders registered for this grain.
-        /// </returns>
-        protected new Task<List<IOrleansReminder>> GetReminders()
+        /// <returns>A sequence of <see cref="string"/> names</returns>
+        protected
+            #if !GRAIN_STUBBING_ENABLED
+                async
+            #endif
+        Task<IEnumerable<string>> RegisteredReminders()
         {
-            return Instance.GetReminders();
+            #if GRAIN_STUBBING_ENABLED
+            return Task.FromResult(reminders.Keys.AsEnumerable());
+            #else
+            return (await base.GetReminders()).Select(x => x.ReminderName);
+            #endif
         }
+
+        #endregion
+
+        #region Deactivation
 
         /// <summary>
         /// Deactivate this activation of the grain after the current grain method call is completed.
@@ -521,62 +758,35 @@ namespace Orleans.Bus
         /// </summary>
         protected new void DeactivateOnIdle()
         {
-            Instance.DeactivateOnIdle();
+            #if GRAIN_STUBBING_ENABLED
+            Dispatched.Add(new RequestedDeactivationOnIdle());
+            #else
+            base.DeactivateOnIdle();
+            #endif
         }
 
         /// <summary>
         /// Delay Deactivation of this activation at least for the specified time duration.
-        ///             A positive <c>timeSpan</c> value means “prevent GC of this activation for that time span”.
-        ///             A negative <c>timeSpan</c> value means “unlock, and make this activation available for GC again”.
         ///             DeactivateOnIdle method would undo / override any current “keep alive” setting,
         ///             making this grain immediately available  for deactivation.
         /// 
         /// </summary>
-        protected new void DelayDeactivation(TimeSpan timeSpan)
+        /// <param name="period">
+        /// <para>A positive value means “prevent GC of this activation for that time span”</para> 
+        /// <para>A negative value means “unlock, and make this activation available for GC again”</para>
+        /// </param>
+        protected new void DelayDeactivation(TimeSpan period)
         {
-            Instance.DelayDeactivation(timeSpan);
-        }
-
-        #endif
-
-        #region IGrainInstance
-
-        IOrleansTimer IGrainInstance.RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
-        {
-            return base.RegisterTimer(asyncCallback, state, dueTime, period);
-        }
-
-        Task<IOrleansReminder> IGrainInstance.RegisterOrUpdateReminder(string reminderName, TimeSpan dueTime, TimeSpan period)
-        {
-            return base.RegisterOrUpdateReminder(reminderName, dueTime, period);
-        }
-
-        Task IGrainInstance.UnregisterReminder(IOrleansReminder reminder)
-        {
-            return base.UnregisterReminder(reminder);
-        }
-
-        Task<IOrleansReminder> IGrainInstance.GetReminder(string reminderName)
-        {
-            return base.GetReminder(reminderName);
-        }
-
-        Task<List<IOrleansReminder>> IGrainInstance.GetReminders()
-        {
-            return base.GetReminders();
-        }
-
-        void IGrainInstance.DeactivateOnIdle()
-        {
-            base.DeactivateOnIdle();
-        }
-
-        void IGrainInstance.DelayDeactivation(TimeSpan timeSpan)
-        {
-            base.DelayDeactivation(timeSpan);
+            #if GRAIN_STUBBING_ENABLED
+            Dispatched.Add(new RequestedDeactivationDelay(period));
+            #else
+            base.DelayDeactivation(period);
+            #endif
         }
 
         #endregion
+		        
+		#if GRAIN_STUBBING_ENABLED
 
 		/// <summary>
         /// Sets grain's state for testing purposes
@@ -587,9 +797,7 @@ namespace Orleans.Bus
 			explicitState = state;
 			#endif
 		}
-		        
-		#if DEBUG
-		
+				
 		TState explicitState;
        
 		/// <summary>
@@ -597,7 +805,7 @@ namespace Orleans.Bus
         /// </summary>
         protected new TState State
         {
-            get { return explicitState ?? base.State; }
+            get { return explicitState; }
         }
 
 		#endif
@@ -608,18 +816,18 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrainWithGuidId : MessageBasedGrain, IHaveGuidId
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Guid id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Guid? explicitId;       	
+		Guid explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -629,8 +837,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -642,18 +850,18 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrainWithInt64Id : MessageBasedGrain, IHaveInt64Id
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Int64 id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Int64? explicitId;       	
+		Int64 explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -663,8 +871,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -676,18 +884,18 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrainWithStringId : MessageBasedGrain, IHaveStringId
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(String id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
 		String explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -697,8 +905,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -711,18 +919,18 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrainWithGuidId<TState> : MessageBasedGrain<TState>, IHaveGuidId
 	        where TState : class, IGrainState
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Guid id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Guid? explicitId;       	
+		Guid explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -732,8 +940,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -747,18 +955,18 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrainWithInt64Id<TState> : MessageBasedGrain<TState>, IHaveInt64Id
 	        where TState : class, IGrainState
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Int64 id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Int64? explicitId;       	
+		Int64 explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -768,8 +976,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -783,18 +991,18 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrainWithStringId<TState> : MessageBasedGrain<TState>, IHaveStringId
 	        where TState : class, IGrainState
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(String id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
 		String explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -804,8 +1012,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -895,18 +1103,18 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class ObservableMessageBasedGrainWithGuidId : ObservableMessageBasedGrain, IHaveGuidId
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Guid id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Guid? explicitId;       	
+		Guid explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -916,8 +1124,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -942,18 +1150,18 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class ObservableMessageBasedGrainWithInt64Id : ObservableMessageBasedGrain, IHaveInt64Id
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Int64 id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Int64? explicitId;       	
+		Int64 explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -963,8 +1171,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -989,18 +1197,18 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class ObservableMessageBasedGrainWithStringId : ObservableMessageBasedGrain, IHaveStringId
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(String id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
 		String explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -1010,8 +1218,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -1037,18 +1245,18 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithGuidId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveGuidId
         where TGrainState : class, IGrainState
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Guid id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Guid? explicitId;       	
+		Guid explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -1058,8 +1266,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Guid Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -1084,18 +1292,18 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithInt64Id<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveInt64Id
         where TGrainState : class, IGrainState
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(Int64 id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
-		Int64? explicitId;       	
+		Int64 explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -1105,8 +1313,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Int64 Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId.Value : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -1131,18 +1339,18 @@ namespace Orleans.Bus
     public abstract class ObservableMessageBasedGrainWithStringId<TGrainState> : ObservableMessageBasedGrain<TGrainState>, IHaveStringId
         where TGrainState : class, IGrainState
     {
+		#if GRAIN_STUBBING_ENABLED
+		
 		/// <summary>
         /// Sets grain's id for testing purposes
         /// </summary>
         public void SetId(String id)
         {
-			#if DEBUG
 			explicitId = id;
-			#endif
 		}
 		        
-		#if DEBUG
 		String explicitId;       	
+
 		#endif
 
         /// <summary>
@@ -1152,8 +1360,8 @@ namespace Orleans.Bus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected String Id()
         {
-			#if DEBUG
-			return explicitId != null ? explicitId : Identity.Of(this);
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
 			#else
 			return Identity.Of(this);
 			#endif
@@ -1172,116 +1380,110 @@ namespace Orleans.Bus
         }
 	}
 
-    /// <summary>
-    /// This interface exists solely for unit testing purposes
-    /// </summary>
-    public interface IGrainInstance
+	#if GRAIN_STUBBING_ENABLED
+
+    public class RegisteredTimer<TTimerState>
     {
-        /// <summary>
-        /// Registers a timer to send periodic callbacks to this grain.
-        /// 
-        /// </summary>
-        /// 
-        /// <remarks>
-        /// 
-        /// <para>
-        /// This timer will not prevent the current grain from being deactivated.
-        ///             If the grain is deactivated, then the timer will be discarded.
-        /// 
-        /// </para>
-        /// 
-        /// <para>
-        /// Until the Task returned from the asyncCallback is resolved,
-        ///             the next timer tick will not be scheduled.
-        ///             That is to say, timer callbacks never interleave their turns.
-        /// 
-        /// </para>
-        /// 
-        /// <para>
-        /// The timer may be stopped at any time by calling the <c>Dispose</c> method
-        ///             on the timer handle returned from this call.
-        /// 
-        /// </para>
-        /// 
-        /// <para>
-        /// Any exceptions thrown by or faulted Task's returned from the asyncCallback
-        ///             will be logged, but will not prevent the next timer tick from being queued.
-        /// 
-        /// </para>
-        /// 
-        /// </remarks>
-        /// <param name="asyncCallback">Callback function to be invoked when timr ticks.</param>
-        /// <param name="state">State object that will be passed as argument when calling the asyncCallback.</param>
-        /// <param name="dueTime">Due time for first timer tick.</param>
-        /// <param name="period">Period of subsequent timer ticks.</param>
-        /// <returns>
-        /// Handle for this Timer.
-        /// </returns>
-        /// <seealso cref="T:Orleans.IOrleansTimer"/>
-        IOrleansTimer RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period);
-        
-		/// <summary>
-        /// Registers a persistent, reliable reminder to send regular notifications (reminders) to the grain.
-        ///             The grain must implement the <c>Orleans.IRemindable</c> interface, and reminders for this grain will be sent to the <c>ReceiveReminder</c> callback method.
-        ///             If the current grain is deactivated when the timer fires, a new activation of this grain will be created to receive this reminder.
-        ///             If an existing reminder with the same name already exists, that reminder will be overwritten with this new reminder.
-        ///             Reminders will always be received by one activation of this grain, even if multiple activations exist for this grain.
-        /// 
-        /// </summary>
-        /// <param name="reminderName">Name of this reminder</param>
-        /// <param name="dueTime">Due time for this reminder</param>
-        /// <param name="period">Frequence period for this reminder</param>
-        /// <returns>
-        /// Promise for Reminder handle.
-        /// </returns>
-        Task<IOrleansReminder> RegisterOrUpdateReminder(string reminderName, TimeSpan dueTime, TimeSpan period);
+        public readonly string Name;
+        public readonly Func<TTimerState, Task> Callback;
+        public readonly object State;
+        public readonly TimeSpan Due;
+        public readonly TimeSpan Period;
 
-        /// <summary>
-        /// Unregisters a previously registered reminder.
-        /// 
-        /// </summary>
-        /// <param name="reminder">Reminder to unregister.</param>
-        /// <returns>
-        /// Completion promise for this operation.
-        /// </returns>
-        Task UnregisterReminder(IOrleansReminder reminder);
-
-        /// <summary>
-        /// Returns a previously registered reminder.
-        /// 
-        /// </summary>
-        /// <param name="reminderName">Reminder to return</param>
-        /// <returns>
-        /// Promise for Reminder handle.
-        /// </returns>
-        Task<IOrleansReminder> GetReminder(string reminderName);
-		
-        /// <summary>
-        /// Returns a list of all reminders registered by the grain.
-        /// 
-        /// </summary>
-        /// 
-        /// <returns>
-        /// Promise for list of Reminders registered for this grain.
-        /// </returns>
-        Task<List<IOrleansReminder>> GetReminders();
-
-        /// <summary>
-        /// Deactivate this activation of the grain after the current grain method call is completed.
-        ///             This call will mark this activation of the current grain to be deactivated and removed at the end of the current method.
-        ///             The next call to this grain will result in a different activation to be used, which typical means a new activation will be created automatically by the runtime.
-        /// 
-        /// </summary>
-        void DeactivateOnIdle();
-
-        /// <summary>
-        /// Delay Deactivation of this activation at least for the specified time duration.
-        ///             A positive <c>timeSpan</c> value means “prevent GC of this activation for that time span”.
-        ///             A negative <c>timeSpan</c> value means “unlock, and make this activation available for GC again”.
-        ///             DeactivateOnIdle method would undo / override any current “keep alive” setting,
-        ///             making this grain immediately available  for deactivation.
-        /// 
-        /// </summary>
-        void DelayDeactivation(TimeSpan timeSpan);
+        public RegisteredTimer(string name, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
+        {
+            Name = name;
+            Callback = callback;
+            State = state;
+            Due = due;
+            Period = period;
+        }
     }
+
+    public class UnregisteredTimer
+    {
+        public readonly string Name;
+
+        public UnregisteredTimer(string name)
+        {
+            Name = name;
+        }
+    }
+
+    public class RegisteredReminder
+    {
+        public readonly string Name;
+        public readonly TimeSpan Due;
+        public readonly TimeSpan Period;
+
+        public RegisteredReminder(string name, TimeSpan due, TimeSpan period)
+        {
+            Name = name;
+            Due = due;
+            Period = period;
+        }
+    }
+
+    public class UnregisteredReminder
+    {
+        public readonly string Name;
+
+        public UnregisteredReminder(string name)
+        {
+            Name = name;
+        }
+    }
+
+    public class RequestedDeactivationOnIdle
+    {}
+
+    public class RequestedDeactivationDelay
+    {
+        public readonly TimeSpan Period;
+
+        public RequestedDeactivationDelay(TimeSpan period)
+        {
+            Period = period;
+        }
+    }
+
+    class TimerStub : IOrleansTimer
+    {
+        readonly string name;
+
+        public TimerStub(string name)
+        {
+            this.name = name;
+        }
+
+        public string Name
+        {
+            get { return name; }
+        }
+
+        public void Dispose()
+        {}
+    }
+
+    class ReminderStub : IOrleansReminder
+    {
+        readonly string name;
+
+        public ReminderStub(string name)
+        {
+            this.name = name;
+        }
+
+        public string Name
+        {
+            get { return name; }
+        }
+
+        string IOrleansReminder.ReminderName
+        {
+            get { return name; }
+        }
+    }
+
+#endif
 }

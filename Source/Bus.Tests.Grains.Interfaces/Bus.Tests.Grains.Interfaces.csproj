@@ -54,7 +54,6 @@
     <Compile Include="Infrastructure\ITestGrainWithLongId.cs" />
     <Compile Include="Infrastructure\ITestGrainWithStringId.cs" />
     <Compile Include="Infrastructure\ITestObservableGrain.cs" />
-    <Compile Include="Infrastructure\ITestPersistentGrain.cs" />
     <Compile Include="ITestObservableMessageBasedGrain.cs" />
     <Compile Include="ITestMessageBasedGrain.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
