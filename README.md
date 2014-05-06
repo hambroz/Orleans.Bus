@@ -12,6 +12,20 @@ To install Orleans.Bus via NuGet, run this command in NuGet package manager cons
 
 	PM> Install-Package Orleans.Bus
 
+Then follow instructions in [README](https://github.com/yevhen/Orleans.Bus/blob/master/Build/Readme.txt) file.
+
+## Features at glance
+
+- Developer-driendly api
+- Selective Event subscriptions
+- Reactive Extensions (RX) support
+- Support of higher-order functions (handlers)
+- Convinient exception handling
+- Strongly typed grain identity
+- Receiver identity type checking
+- Unit testing simplicity
+- F# bindings (ala Akka.Net)
+
 ## Documentation
 
 For detailed documentation see [wiki](https://github.com/yevhen/Orleans.Bus/wiki) pages.
