@@ -6,11 +6,11 @@ namespace Orleans.Bus.Stubs
 {
     public class ObserverCollectionStub : IObserverCollection
     {
-        public readonly List<Notification> Notifications = new List<Notification>();
+        public readonly List<RecordedEvent> RecordedEvents = new List<RecordedEvent>();
 
         void IObserverCollection.Notify(object sender, object @event)
         {
-            Notifications.Add(new Notification(sender, @event));
+            RecordedEvents.Add(new RecordedEvent(sender, @event));
         }
 
         #region Unused
@@ -28,12 +28,12 @@ namespace Orleans.Bus.Stubs
         #endregion
     }
 
-    public class Notification
+    public class RecordedEvent
     {
         public readonly object Sender;
         public readonly object Event;
 
-        public Notification(object sender, object @event)
+        public RecordedEvent(object sender, object @event)
         {
             Sender = sender;
             Event = @event;

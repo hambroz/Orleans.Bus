@@ -64,6 +64,7 @@
     <Compile Include="Stubs\Local.cs" />
     <Compile Include="Stubs\MessageBusStub.cs" />
     <Compile Include="Stubs\ObserverCollectionStub.cs" />
+    <Compile Include="Stubs\ObserverStub.cs" />
     <Compile Include="Stubs\ReminderStub.cs" />
     <Compile Include="Stubs\TimerStub.cs" />
   </ItemGroup>
