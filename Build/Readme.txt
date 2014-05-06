@@ -12,7 +12,9 @@
 
 3. Make sure that you grain interfaces are marked with [ExtendedPrimaryKey].
    Handler methods with [Handler] and events are advertised via [Publisher] if any.
-   Check sample interfaces here and here.
+   
+   * Check sample interfaces in a test project 
+     https://github.com/yevhen/Orleans.Bus/tree/master/Source/Bus.Tests.Grains.Interfaces 
 
 4. Link MessageBasedGrain.cs file, which you can find inside 'linked' folder 
    within Orleans.Bus package directory, to your grain implementation project. 
