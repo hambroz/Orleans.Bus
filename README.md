@@ -10,8 +10,6 @@ This project aims to bring familiar message bus communication style to Orleans f
 - Reactive Extensions (RX) support
 - Support of higher-order functions (handlers)
 - Convinient exception handling
-- Strongly typed grain identity
-- Receiver identity type checking
 - Unit testing simplicity
 
 ### Prerequisites
