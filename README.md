@@ -5,6 +5,7 @@ This project aims to bring familiar message bus communication style to Orleans f
 ## Main features
 
 - Developer-driendly api
+- Command/Query semantics enforcement
 - Selective Event subscriptions
 - Reactive Extensions (RX) support
 - Support of higher-order functions (handlers)
