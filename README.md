@@ -4,7 +4,7 @@ This project aims to bring familiar message bus communication style to Orleans f
 
 ## Main features
 
-- Developer-driendly api
+- Developer-friendly api
 - Command/Query semantics enforcement
 - Selective Event subscriptions
 - Reactive Extensions (RX) support
@@ -13,7 +13,6 @@ This project aims to bring familiar message bus communication style to Orleans f
 - Strongly typed grain identity
 - Receiver identity type checking
 - Unit testing simplicity
-- F# bindings (ala Akka.Net)
 
 ### Prerequisites
 - [Orleans SDK](https://orleans.codeplex.com/wikipage?title=Orleans%20Setup%20for%20Developers&referringTitle=Home "Link to Orleans SDK installation page")
