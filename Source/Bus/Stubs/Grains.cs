@@ -11,7 +11,7 @@ namespace Orleans.Bus.Stubs
             get;
         }
 
-        List<GrainAuditEvent> Dispatched
+        List<Invocation> Invocations
         {
             get;
         }

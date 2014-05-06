@@ -4,20 +4,20 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus.Stubs
 {
-    public abstract class GrainAuditEvent
+    public abstract class Invocation
     {}
 
-    public class RegisteredTimer<TTimerState> : GrainAuditEvent
+    public class RegisteredTimer<TTimerState> : Invocation
     {
-        public readonly string Name;
+        public readonly string Id;
         public readonly Func<TTimerState, Task> Callback;
         public readonly object State;
         public readonly TimeSpan Due;
         public readonly TimeSpan Period;
 
-        public RegisteredTimer(string name, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
+        public RegisteredTimer(string id, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
         {
-            Name = name;
+            Id = id;
             Callback = callback;
             State = state;
             Due = due;
@@ -25,44 +25,44 @@ namespace Orleans.Bus.Stubs
         }
     }
 
-    public class UnregisteredTimer : GrainAuditEvent
+    public class UnregisteredTimer : Invocation
     {
-        public readonly string Name;
+        public readonly string Id;
 
-        public UnregisteredTimer(string name)
+        public UnregisteredTimer(string id)
         {
-            Name = name;
+            Id = id;
         }
     }
 
-    public class RegisteredReminder : GrainAuditEvent
+    public class RegisteredReminder : Invocation
     {
-        public readonly string Name;
+        public readonly string Id;
         public readonly TimeSpan Due;
         public readonly TimeSpan Period;
 
-        public RegisteredReminder(string name, TimeSpan due, TimeSpan period)
+        public RegisteredReminder(string id, TimeSpan due, TimeSpan period)
         {
-            Name = name;
+            Id = id;
             Due = due;
             Period = period;
         }
     }
 
-    public class UnregisteredReminder : GrainAuditEvent
+    public class UnregisteredReminder : Invocation
     {
-        public readonly string Name;
+        public readonly string Id;
 
-        public UnregisteredReminder(string name)
+        public UnregisteredReminder(string id)
         {
-            Name = name;
+            Id = id;
         }
     }
 
-    public class RequestedDeactivationOnIdle : GrainAuditEvent
+    public class RequestedDeactivationOnIdle : Invocation
     {}
 
-    public class RequestedDeactivationDelay : GrainAuditEvent
+    public class RequestedDeactivationDelay : Invocation
     {
         public readonly TimeSpan Period;
 

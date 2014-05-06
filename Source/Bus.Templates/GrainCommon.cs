@@ -148,11 +148,11 @@
         
         #if GRAIN_STUBBING_ENABLED
 
-        List<GrainAuditEvent> dispatched = new List<GrainAuditEvent>();
+        List<Invocation> invocations = new List<Invocation>();
 
-        List<GrainAuditEvent> IStubbedMessageGrain.Dispatched
+        List<Invocation> IStubbedMessageGrain.Invocations
         {
-            get {return dispatched; }
+            get {return invocations; }
         }
 
         #endif
@@ -196,55 +196,55 @@
         /// </para>
         /// 
         /// </remarks>
-        /// <param name="name">Name of the timer</param>
+        /// <param name="id">Unique id of the timer</param>
         /// <param name="callback">Callback function to be invoked when timer ticks.</param>
         /// <param name="state">State object that will be passed as argument when calling the  <paramref name="callback"/>.</param>
         /// <param name="due">Due time for first timer tick.</param>
         /// <param name="period">Period of subsequent timer ticks.</param>
-        protected void RegisterTimer<TTimerState>(string name, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
+        protected void RegisterTimer<TTimerState>(string id, Func<TTimerState, Task> callback, TTimerState state, TimeSpan due, TimeSpan period)
         {
             IOrleansTimer timer;
 
             #if GRAIN_STUBBING_ENABLED
 
-            timer = new TimerStub(name);
-            dispatched.Add(new RegisteredTimer<TTimerState>(name, callback, state, due, period));
+            timer = new TimerStub();
+            invocations.Add(new RegisteredTimer<TTimerState>(id, callback, state, due, period));
             
             #else
             timer = base.RegisterTimer(s => callback((TTimerState) s), state, due, period);
             #endif
 
-            timers.Add(name, timer);
+            timers.Add(id, timer);
         }
 
         /// <summary>
         /// Unregister previously registered timer. 
         /// </summary>
-        /// <param name="name">Name of the timer</param>
-        protected void UnregisterTimer(string name)
+        /// <param name="id">Unique id of the timer</param>
+        protected void UnregisterTimer(string id)
         {
-            var timer = timers[name];
+            var timer = timers[id];
             timer.Dispose();
 
             #if GRAIN_STUBBING_ENABLED
-            dispatched.Add(new UnregisteredTimer(name));
+            invocations.Add(new UnregisteredTimer(id));
             #endif
         }
 
         /// <summary>
         /// Checks whether timer with the given name was registered before
         /// </summary>
-        /// <param name="name">Name of the timer</param>
+        /// <param name="id">Unique id of the timer</param>
         /// <returns><c>true</c> if timer was the give name was previously registered, <c>false</c> otherwise </returns>
-        protected bool IsTimerRegistered(string name)
+        protected bool IsTimerRegistered(string id)
         {
-            return timers.ContainsKey(name);
+            return timers.ContainsKey(id);
         }
 
         /// <summary>
-        /// Returns names of all currently registered timers
+        /// Returns ids of all currently registered timers
         /// </summary>
-        /// <returns>A sequence of <see cref="string"/> names</returns>
+        /// <returns>A sequence of <see cref="string"/> elements</returns>
         protected IEnumerable<string> RegisteredTimers()
         {
             return timers.Keys;
@@ -263,11 +263,11 @@
         /// Registers a persistent, reliable reminder to send regular notifications (Reminders) to the grain.
         ///             The grain must implement the <c>Orleans.IRemindable</c> interface, and Reminders for this grain will be sent to the <c>ReceiveReminder</c> callback method.
         ///             If the current grain is deactivated when the timer fires, a new activation of this grain will be created to receive this reminder.
-        ///             If an existing reminder with the same name already exists, that reminder will be overwritten with this new reminder.
+        ///             If an existing reminder with the same id already exists, that reminder will be overwritten with this new reminder.
         ///             Reminders will always be received by one activation of this grain, even if multiple activations exist for this grain.
         /// 
         /// </summary>
-        /// <param name="name">Name of this reminder</param>
+        /// <param name="id">Unique id of the reminder</param>
         /// <param name="due">Due time for this reminder</param>
         /// <param name="period">Frequence period for this reminder</param>
         /// <returns>
@@ -277,42 +277,42 @@
              #if !GRAIN_STUBBING_ENABLED
                 async
             #endif
-        Task RegisterReminder(string name, TimeSpan due, TimeSpan period)
+        Task RegisterReminder(string id, TimeSpan due, TimeSpan period)
         {
             #if GRAIN_STUBBING_ENABLED
             
-            var reminder = new ReminderStub(name);
-            reminders[name] = reminder;
+            var reminder = new ReminderStub();
+            reminders[id] = reminder;
 
-            dispatched.Add(new RegisteredReminder(name, due, period));
+            invocations.Add(new RegisteredReminder(id, due, period));
             return TaskDone.Done;
             
             #else
-            var reminder = await base.RegisterOrUpdateReminder(name, due, period);
-            reminders[name] = reminder;
+            var reminder = await base.RegisterOrUpdateReminder(id, due, period);
+            reminders[id] = reminder;
             #endif
         }
 
         /// <summary>
         /// Unregister previously registered peristent reminder if any
         /// </summary>
-        /// <param name="name">Name of the reminder</param>
+        /// <param name="id">Unique id of the reminder</param>
         protected
             #if !GRAIN_STUBBING_ENABLED
                 async
             #endif
-        Task UnregisterReminder(string name)
+        Task UnregisterReminder(string id)
         {
             #if GRAIN_STUBBING_ENABLED
             
-            reminders.Remove(name);
-            dispatched.Add(new UnregisteredReminder(name));
+            reminders.Remove(id);
+            invocations.Add(new UnregisteredReminder(id));
             return TaskDone.Done;
             
             #else
             
-            reminders.Remove(name);
-            var reminder = await base.GetReminder(name);
+            reminders.Remove(id);
+            var reminder = await base.GetReminder(id);
             if (reminder != null)
                 await base.UnregisterReminder(reminder);
 
@@ -320,27 +320,27 @@
         }
 
         /// <summary>
-        /// Checks whether reminder with the given name is currently registered
+        /// Checks whether reminder with the given id is currently registered
         /// </summary>
-        /// <param name="name">Name of the reminder</param>
+        /// <param name="id">Unique id of the reminder</param>
         /// <returns><c>true</c> if reminder with the give name is currently registered, <c>false</c> otherwise </returns>
         protected
             #if !GRAIN_STUBBING_ENABLED
                 async
             #endif
-        Task<bool> IsReminderRegistered(string name)
+        Task<bool> IsReminderRegistered(string id)
         {
             #if GRAIN_STUBBING_ENABLED
-            return Task.FromResult(reminders.ContainsKey(name));
+            return Task.FromResult(reminders.ContainsKey(id));
             #else
-            return reminders.ContainsKey(name) || (await base.GetReminder(name)) != null;
+            return reminders.ContainsKey(id) || (await base.GetReminder(id)) != null;
             #endif
         }
 
         /// <summary>
-        /// Returns names of all currently registered reminders
+        /// Returns ids of all currently registered reminders
         /// </summary>
-        /// <returns>A sequence of <see cref="string"/> names</returns>
+        /// <returns>A sequence of <see cref="string"/> elements</returns>
         protected
             #if !GRAIN_STUBBING_ENABLED
                 async
@@ -367,7 +367,7 @@
         protected new void DeactivateOnIdle()
         {
             #if GRAIN_STUBBING_ENABLED
-            dispatched.Add(new RequestedDeactivationOnIdle());
+            invocations.Add(new RequestedDeactivationOnIdle());
             #else
             base.DeactivateOnIdle();
             #endif
@@ -386,7 +386,7 @@
         protected new void DelayDeactivation(TimeSpan period)
         {
             #if GRAIN_STUBBING_ENABLED
-            dispatched.Add(new RequestedDeactivationDelay(period));
+            invocations.Add(new RequestedDeactivationDelay(period));
             #else
             base.DelayDeactivation(period);
             #endif
