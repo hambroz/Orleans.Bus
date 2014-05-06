@@ -8,9 +8,9 @@ namespace Orleans.Bus.Stubs
     {
         public readonly List<RecordedEvent> RecordedEvents = new List<RecordedEvent>();
 
-        void IObserverCollection.Notify(object sender, object @event)
+        void IObserverCollection.Notify(string source, object @event)
         {
-            RecordedEvents.Add(new RecordedEvent(sender, @event));
+            RecordedEvents.Add(new RecordedEvent(source, @event));
         }
 
         #region Unused

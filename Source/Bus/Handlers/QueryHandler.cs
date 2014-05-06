@@ -30,33 +30,36 @@ namespace Orleans.Bus
             var query = method.GetParameters()[0].ParameterType;
             var result = method.ReturnType.GetGenericArguments()[0];
 
-            var handler = typeof(QueryHandler<,>).MakeGenericType(query, result);
-            return (QueryHandler)Activator.CreateInstance(handler, new object[] { grain, method });
+            var handler = typeof(QueryHandler<>).MakeGenericType(result);
+            return (QueryHandler)Activator.CreateInstance(handler, new object[] { grain, query, method });
         }
     }
 
-    class QueryHandler<TQuery, TResult> : QueryHandler
+    class QueryHandler<TResult> : QueryHandler
     {
-        readonly Func<object, TQuery, Task<TResult>> invoker;
+        readonly Func<object, object, Task<TResult>> invoker;
 
-        public QueryHandler(Type grain, MethodInfo method)
-            : base(grain, typeof(TQuery))
+        public QueryHandler(Type grain, Type query, MethodInfo method)
+            : base(grain, query)
         {
-            invoker = Bind(grain, method);
+            invoker = Bind(method);
         }
 
-        public Task<TResult> Handle(object grain, TQuery query)
+        public Task<TResult> Handle(object grain, object query)
         {
             return invoker(grain, query);
         }
 
-        static Func<object, TQuery, Task<TResult>> Bind(Type grain, MethodInfo method)
+        Func<object, object, Task<TResult>> Bind(MethodInfo method)
         {
             var target = Expression.Parameter(typeof(object), "target");
-            var query = Expression.Parameter(typeof(TQuery), "query");
+            var argument = Expression.Parameter(typeof(object), "query");
 
-            var call = Expression.Call(Expression.Convert(target, grain), method, new Expression[] { query });
-            var lambda = Expression.Lambda<Func<object, TQuery, Task<TResult>>>(call, target, query);
+            var typeCast = Expression.Convert(target, Grain);
+            var argumentCast = Expression.Convert(argument, Query);
+
+            var call = Expression.Call(typeCast, method, new Expression[] { argumentCast });
+            var lambda = Expression.Lambda<Func<object, object, Task<TResult>>>(call, target, argument);
 
             return lambda.Compile();
         }

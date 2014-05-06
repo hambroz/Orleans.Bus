@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public interface ITestGrainWithInt64Id : IGrain, IHaveInt64Id
+    class Meta
     {
-        Task Foo();
     }
 }

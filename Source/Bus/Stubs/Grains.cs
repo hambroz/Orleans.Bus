@@ -15,6 +15,8 @@ namespace Orleans.Bus.Stubs
         {
             get;
         }
+
+        void SetId(Guid id);
     }
 
     public interface IStubbedObservableMessageGrain
@@ -23,21 +25,6 @@ namespace Orleans.Bus.Stubs
         {
             get;
         }
-    }
-
-    public interface IStubGuidId
-    {
-        void SetId(Guid id);
-    }
-
-    public interface IStubInt64Id
-    {
-        void SetId(long id);
-    }
-
-    public interface IStubStringId
-    {
-        void SetId(string id);
     }
 
     public interface IStubState<TState>

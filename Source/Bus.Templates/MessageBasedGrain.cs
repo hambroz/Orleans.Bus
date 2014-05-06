@@ -11,14 +11,14 @@ using Orleans.Bus.Stubs;
 namespace Orleans.Bus
 {
     /// <summary>
-    /// Base class for all kinds of message based grains
+    /// Base class for message based grains
     /// </summary>
     public abstract class MessageBasedGrain : GrainBase, IGrain
         #if GRAIN_STUBBING_ENABLED
             , IStubbedMessageGrain
         #endif
     {
-        IMessageBus bus = 
+        readonly IMessageBus bus = 
         #if GRAIN_STUBBING_ENABLED
             new MessageBusStub();
         #else
@@ -34,88 +34,62 @@ namespace Orleans.Bus
         
         #endif
 
+        #region Identity
+
+		#if GRAIN_STUBBING_ENABLED
+		
+		string explicitId;
+
+        void IStubbedMessageGrain.SetId(string id)
+        {
+			explicitId = id;
+		}
+		        
+		#endif
+
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns>String identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected string Id()
+        {
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
+			#else
+            string id;
+            this.GetPrimaryKeyLong(out id);
+            return id;
+			#endif
+        }
+
+        #endregion
+
         #region Message exchange shortcuts
 
         /// <summary>
-        /// Sends command message to a grain with the given <see cref="Guid"/> id
+        /// Sends command message to the specified grain
         /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="command">Command message to send</param>
         /// <returns>Promise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(Guid id, TCommand command)
+        protected Task Send(string destination, object command)
         {
-            return bus.Send(id, command);
-        }
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="Int64"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(long id, TCommand command)
-        {
-            return bus.Send(id, command);
-        }
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="string"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(string id, TCommand command)
-        {
-            return bus.Send(id, command);
+            return bus.Send(destination, command);
         }
 
         /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Guid"/> id and casts result to the specified type
+        /// Sends query message to the specified grain
         /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
+        /// <typeparam name="TResult">Type of the result</typeparam>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="query">Query message to send</param>
         /// <returns>Promise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query)        
+        protected Task<TResult> Query<TResult>(string destination, object query)        
         {
-            return bus.Query<TQuery, TResult>(id, query);
-        }
-        
-        /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Int64"/> id
-        /// and casts result to the specified type
-        /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(long id, TQuery query)        
-        {
-            return bus.Query<TQuery, TResult>(id, query);
-        }
-        
-        /// <summary>
-        /// Sends query message to a grain with the given  <see cref="String"/> id and casts result to the specified type
-        /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(string id, TQuery query)        
-        {
-            return bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TResult>(destination, query);
         }
 
         #endregion
@@ -416,7 +390,7 @@ namespace Orleans.Bus
 	}
 
     /// <summary>
-    /// Base class for all kinds of persistent message based grains
+    /// Base class for persistent message based grains
     /// </summary>
     public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain
         #if GRAIN_STUBBING_ENABLED
@@ -425,7 +399,7 @@ namespace Orleans.Bus
         #endif	 
         where TState : class, IGrainState
     {
-        IMessageBus bus = 
+        readonly IMessageBus bus = 
         #if GRAIN_STUBBING_ENABLED
             new MessageBusStub();
         #else
@@ -441,88 +415,62 @@ namespace Orleans.Bus
         
         #endif
 
+        #region Identity
+
+		#if GRAIN_STUBBING_ENABLED
+		
+		string explicitId;
+
+        void IStubbedMessageGrain.SetId(string id)
+        {
+			explicitId = id;
+		}
+		        
+		#endif
+
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns>String identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected string Id()
+        {
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
+			#else
+            string id;
+            this.GetPrimaryKeyLong(out id);
+            return id;
+			#endif
+        }
+
+        #endregion
+
         #region Message exchange shortcuts
 
         /// <summary>
-        /// Sends command message to a grain with the given <see cref="Guid"/> id
+        /// Sends command message to the specified grain
         /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="command">Command message to send</param>
         /// <returns>Promise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(Guid id, TCommand command)
+        protected Task Send(string destination, object command)
         {
-            return bus.Send(id, command);
-        }
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="Int64"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(long id, TCommand command)
-        {
-            return bus.Send(id, command);
-        }
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="string"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(string id, TCommand command)
-        {
-            return bus.Send(id, command);
+            return bus.Send(destination, command);
         }
 
         /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Guid"/> id and casts result to the specified type
+        /// Sends query message to the specified grain
         /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
+        /// <typeparam name="TResult">Type of the result</typeparam>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="query">Query message to send</param>
         /// <returns>Promise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query)        
+        protected Task<TResult> Query<TResult>(string destination, object query)        
         {
-            return bus.Query<TQuery, TResult>(id, query);
-        }
-        
-        /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Int64"/> id
-        /// and casts result to the specified type
-        /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(long id, TQuery query)        
-        {
-            return bus.Query<TQuery, TResult>(id, query);
-        }
-        
-        /// <summary>
-        /// Sends query message to a grain with the given  <see cref="String"/> id and casts result to the specified type
-        /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(string id, TQuery query)        
-        {
-            return bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TResult>(destination, query);
         }
 
         #endregion
@@ -844,222 +792,11 @@ namespace Orleans.Bus
 	}
 
     /// <summary>
-    /// Base class for message based grains identifiable by <see cref="Guid"/> identifier
+    /// Base class for observable message based grains
     /// </summary>
-    public abstract class MessageBasedGrainWithGuidId : MessageBasedGrain, IHaveGuidId
-        #if GRAIN_STUBBING_ENABLED
-            , IStubGuidId
-        #endif	
-    {
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubGuidId.SetId(Guid id)
-        {
-			explicitId = id;
-		}
-		        
-		Guid explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Guid"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Guid Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-    }
-
-    /// <summary>
-    /// Base class for message based grains identifiable by <see cref="Int64"/> identifier
-    /// </summary>
-    public abstract class MessageBasedGrainWithInt64Id : MessageBasedGrain, IHaveInt64Id
-        #if GRAIN_STUBBING_ENABLED
-            , IStubInt64Id
-        #endif	
-    {
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubInt64Id.SetId(Int64 id)
-        {
-			explicitId = id;
-		}
-		        
-		Int64 explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Int64"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Int64 Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-    }
-
-    /// <summary>
-    /// Base class for message based grains identifiable by <see cref="String"/> identifier
-    /// </summary>
-    public abstract class MessageBasedGrainWithStringId : MessageBasedGrain, IHaveStringId
-        #if GRAIN_STUBBING_ENABLED
-            , IStubStringId
-        #endif	
-    {
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubStringId.SetId(String id)
-        {
-			explicitId = id;
-		}
-		        
-		String explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="String"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected String Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-    }
-
-    /// <summary>
-    /// Base class for persistent message based grains identifiable by <see cref="Guid"/> identifier
-    /// </summary>
-    public abstract class MessageBasedGrainWithGuidId<TState> : MessageBasedGrain<TState>, IHaveGuidId
-        #if GRAIN_STUBBING_ENABLED
-            , IStubGuidId
-        #endif
-	        where TState : class, IGrainState
-    {
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubGuidId.SetId(Guid id)
-        {
-			explicitId = id;
-		}
-		        
-		Guid explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Guid"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Guid Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-		
-    }
-
-    /// <summary>
-    /// Base class for persistent message based grains identifiable by <see cref="Int64"/> identifier
-    /// </summary>
-    public abstract class MessageBasedGrainWithInt64Id<TState> : MessageBasedGrain<TState>, IHaveInt64Id
-        #if GRAIN_STUBBING_ENABLED
-            , IStubInt64Id
-        #endif
-	        where TState : class, IGrainState
-    {
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubInt64Id.SetId(Int64 id)
-        {
-			explicitId = id;
-		}
-		        
-		Int64 explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Int64"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Int64 Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-		
-    }
-
-    /// <summary>
-    /// Base class for persistent message based grains identifiable by <see cref="String"/> identifier
-    /// </summary>
-    public abstract class MessageBasedGrainWithStringId<TState> : MessageBasedGrain<TState>, IHaveStringId
-        #if GRAIN_STUBBING_ENABLED
-            , IStubStringId
-        #endif
-	        where TState : class, IGrainState
-    {
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubStringId.SetId(String id)
-        {
-			explicitId = id;
-		}
-		        
-		String explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="String"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected String Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-		
-    }
-
-    /// <summary>
-    /// Base class for observable message based grains identifiable by <see cref="Guid"/> identifier
-    /// </summary>
-    public abstract class ObservableMessageBasedGrainWithGuidId : MessageBasedGrain, IObservableGrain, IHaveGuidId
+    public abstract class ObservableMessageBasedGrain : MessageBasedGrain, IObservableGrain
         #if GRAIN_STUBBING_ENABLED
             , IStubbedObservableMessageGrain
-            , IStubGuidId
         #endif
     {
         readonly IObserverCollection observers = 
@@ -1091,30 +828,6 @@ namespace Orleans.Bus
             observers.Detach(o, e);
             return TaskDone.Done;
         }
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubGuidId.SetId(Guid id)
-        {
-			explicitId = id;
-		}
-		        
-		Guid explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Guid"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Guid Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
 
 	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
@@ -1127,170 +840,14 @@ namespace Orleans.Bus
         {
             observers.Notify(Id(), e);
         }
-		
     }
 
     /// <summary>
-    /// Base class for observable message based grains identifiable by <see cref="Int64"/> identifier
+    /// Base class for persistent observable message based grains
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWithInt64Id : MessageBasedGrain, IObservableGrain, IHaveInt64Id
+    public abstract class ObservableMessageBasedGrain<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain
         #if GRAIN_STUBBING_ENABLED
             , IStubbedObservableMessageGrain
-            , IStubInt64Id
-        #endif
-    {
-        readonly IObserverCollection observers = 
-        #if GRAIN_STUBBING_ENABLED
-            new ObserverCollectionStub();
-        #else
-            new ObserverCollection();
-        #endif
-
-        #if GRAIN_STUBBING_ENABLED
-        
-        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
-        {
-            get {return (ObserverCollectionStub)observers; }
-        }
-        
-        #endif
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Attach(Observes o, Type e)
-        {
-            observers.Attach(o, e);
-            return TaskDone.Done;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Detach(Observes o, Type e)
-        {
-            observers.Detach(o, e);
-            return TaskDone.Done;
-        }
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubInt64Id.SetId(Int64 id)
-        {
-			explicitId = id;
-		}
-		        
-		Int64 explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Int64"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Int64 Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-
-	    /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
-        {
-            observers.Notify(Id(), e);
-        }
-		
-    }
-
-    /// <summary>
-    /// Base class for observable message based grains identifiable by <see cref="String"/> identifier
-    /// </summary>
-    public abstract class ObservableMessageBasedGrainWithStringId : MessageBasedGrain, IObservableGrain, IHaveStringId
-        #if GRAIN_STUBBING_ENABLED
-            , IStubbedObservableMessageGrain
-            , IStubStringId
-        #endif
-    {
-        readonly IObserverCollection observers = 
-        #if GRAIN_STUBBING_ENABLED
-            new ObserverCollectionStub();
-        #else
-            new ObserverCollection();
-        #endif
-
-        #if GRAIN_STUBBING_ENABLED
-        
-        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
-        {
-            get {return (ObserverCollectionStub)observers; }
-        }
-        
-        #endif
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Attach(Observes o, Type e)
-        {
-            observers.Attach(o, e);
-            return TaskDone.Done;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Detach(Observes o, Type e)
-        {
-            observers.Detach(o, e);
-            return TaskDone.Done;
-        }
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubStringId.SetId(String id)
-        {
-			explicitId = id;
-		}
-		        
-		String explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="String"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected String Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-
-	    /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
-        {
-            observers.Notify(Id(), e);
-        }
-		
-    }
-
-    /// <summary>
-    /// Base class for persistent observable message based grains identifiable by <see cref="Guid"/> identifier
-    /// </summary>
-    public abstract class ObservableMessageBasedGrainWithGuidId<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHaveGuidId
-        #if GRAIN_STUBBING_ENABLED
-            , IStubbedObservableMessageGrain
-            , IStubGuidId
         #endif
         where TGrainState : class, IGrainState
     {
@@ -1323,30 +880,6 @@ namespace Orleans.Bus
             observers.Detach(o, e);
             return TaskDone.Done;
         }
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubGuidId.SetId(Guid id)
-        {
-			explicitId = id;
-		}
-		        
-		Guid explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Guid"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Guid Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
 
 	    /// <summary>
         /// Notifies all attached observers registered for a particular type of event,
@@ -1360,159 +893,4 @@ namespace Orleans.Bus
             observers.Notify(Id(), e);
         }
 	}
-
-    /// <summary>
-    /// Base class for persistent observable message based grains identifiable by <see cref="Int64"/> identifier
-    /// </summary>
-    public abstract class ObservableMessageBasedGrainWithInt64Id<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHaveInt64Id
-        #if GRAIN_STUBBING_ENABLED
-            , IStubbedObservableMessageGrain
-            , IStubInt64Id
-        #endif
-        where TGrainState : class, IGrainState
-    {
-        readonly IObserverCollection observers = 
-        #if GRAIN_STUBBING_ENABLED
-            new ObserverCollectionStub();
-        #else
-            new ObserverCollection();
-        #endif
-
-        #if GRAIN_STUBBING_ENABLED
-        
-        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
-        {
-            get {return (ObserverCollectionStub)observers; }
-        }
-        
-        #endif
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Attach(Observes o, Type e)
-        {
-            observers.Attach(o, e);
-            return TaskDone.Done;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Detach(Observes o, Type e)
-        {
-            observers.Detach(o, e);
-            return TaskDone.Done;
-        }
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubInt64Id.SetId(Int64 id)
-        {
-			explicitId = id;
-		}
-		        
-		Int64 explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="Int64"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Int64 Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-
-	    /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
-        {
-            observers.Notify(Id(), e);
-        }
-	}
-
-    /// <summary>
-    /// Base class for persistent observable message based grains identifiable by <see cref="String"/> identifier
-    /// </summary>
-    public abstract class ObservableMessageBasedGrainWithStringId<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHaveStringId
-        #if GRAIN_STUBBING_ENABLED
-            , IStubbedObservableMessageGrain
-            , IStubStringId
-        #endif
-        where TGrainState : class, IGrainState
-    {
-        readonly IObserverCollection observers = 
-        #if GRAIN_STUBBING_ENABLED
-            new ObserverCollectionStub();
-        #else
-            new ObserverCollection();
-        #endif
-
-        #if GRAIN_STUBBING_ENABLED
-        
-        ObserverCollectionStub IStubbedObservableMessageGrain.Observers
-        {
-            get {return (ObserverCollectionStub)observers; }
-        }
-        
-        #endif
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Attach(Observes o, Type e)
-        {
-            observers.Attach(o, e);
-            return TaskDone.Done;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Task IObservableGrain.Detach(Observes o, Type e)
-        {
-            observers.Detach(o, e);
-            return TaskDone.Done;
-        }
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStubStringId.SetId(String id)
-        {
-			explicitId = id;
-		}
-		        
-		String explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="String"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected String Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-
-	    /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
-        {
-            observers.Notify(Id(), e);
-        }
-	}
-
 }

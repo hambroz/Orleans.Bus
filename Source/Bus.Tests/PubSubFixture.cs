@@ -23,7 +23,7 @@ namespace Orleans.Bus
         [Test]
         public async void When_subscribed()
         {
-            const int grainId = 11;
+            const string grainId = "11";
 
             await bus.Subscribe<TextPublished>(grainId, observer);
             await bus.Send(grainId, new PublishText("sub"));
@@ -32,7 +32,7 @@ namespace Orleans.Bus
                   .WaitOne(TimeSpan.FromSeconds(2));
             
             Assert.AreEqual("sub", client.PublishedText);
-            Assert.AreEqual(grainId, client.SenderId);
+            Assert.AreEqual(grainId, client.Source);
         }
 
         [Test]

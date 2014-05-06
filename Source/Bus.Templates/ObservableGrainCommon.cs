@@ -27,3 +27,15 @@
             observers.Detach(o, e);
             return TaskDone.Done;
         }
+
+	    /// <summary>
+        /// Notifies all attached observers registered for a particular type of event,
+		/// passing given event to each of them.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event</typeparam>
+        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void Notify<TEvent>(TEvent e)
+        {
+            observers.Notify(Id(), e);
+        }

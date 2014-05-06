@@ -8,17 +8,17 @@ namespace Orleans.Bus
     {
         public readonly EventWaitHandle EventReceived = new ManualResetEvent(false);
 
-        public long SenderId = -1;
-        public string PublishedText = "";
+        public string Source;
+        public string PublishedText;
 
-        public void On(object sender, object e)
+        public void On(string source, object e)
         {
-            this.On((long)sender, (dynamic)e);
+            this.On(source, (dynamic)e);
         }
 
-        void On(long sender, TextPublished e)
+        void On(string source, TextPublished e)
         {
-            SenderId = sender;
+            Source = source;
             PublishedText = e.Text;
             EventReceived.Set();
         }

@@ -46,16 +46,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Generic.cs" />
-    <Compile Include="Infrastructure\ITestGrain1.cs" />
-    <Compile Include="Infrastructure\ITestGrain2.cs" />
-    <Compile Include="Infrastructure\ITestGrain3.cs" />
-    <Compile Include="Infrastructure\ITestGrainWithGuidId.cs" />
-    <Compile Include="Infrastructure\ITestGrainWithLongId.cs" />
-    <Compile Include="Infrastructure\ITestGrainWithStringId.cs" />
-    <Compile Include="Infrastructure\ITestObservableGrain.cs" />
     <Compile Include="ITestObservableMessageBasedGrain.cs" />
     <Compile Include="ITestMessageBasedGrain.cs" />
+    <Compile Include="Meta.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

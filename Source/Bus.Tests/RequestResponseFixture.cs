@@ -17,16 +17,16 @@ namespace Orleans.Bus
         public void When_sending_command()
         {
             Assert.DoesNotThrow(
-                async () => await bus.Send(1, new DoFoo("foo")));
+                async () => await bus.Send("test", new DoFoo("foo")));
         }
 
         [Test]
         public async void When_sending_query()
         {
-            await bus.Send(1, new DoFoo("foo"));
+            await bus.Send("test", new DoFoo("foo"));
 
-            var result = await bus.Query<GetFoo, string>(1, new GetFoo());
-            Assert.AreEqual("foo-1", result);
+            var result = await bus.Query<string>("test", new GetFoo());
+            Assert.AreEqual("foo-test", result);
         }  
     }
 }

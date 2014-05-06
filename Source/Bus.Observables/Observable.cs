@@ -13,9 +13,9 @@ namespace Orleans.Bus
         /// <summary>
         /// Event notifications will be delivered to this callback method
         /// </summary>
-        /// <param name="sender">An id of the sender</param>
+        /// <param name="source">An id of the source grain</param>
         /// <param name="e">An event</param>
-        void On(object sender, object e);
+        void On(string source, object e);
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿        IMessageBus bus = 
+﻿        readonly IMessageBus bus = 
         #if GRAIN_STUBBING_ENABLED
             new MessageBusStub();
         #else
@@ -14,88 +14,62 @@
         
         #endif
 
+        #region Identity
+
+		#if GRAIN_STUBBING_ENABLED
+		
+		string explicitId;
+
+        void IStubbedMessageGrain.SetId(string id)
+        {
+			explicitId = id;
+		}
+		        
+		#endif
+
+        /// <summary>
+        /// Gets identifier of the current grain.
+        /// </summary>
+        /// <returns>String identifier</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected string Id()
+        {
+			#if GRAIN_STUBBING_ENABLED
+			return explicitId;
+			#else
+            string id;
+            this.GetPrimaryKeyLong(out id);
+            return id;
+			#endif
+        }
+
+        #endregion
+
         #region Message exchange shortcuts
 
         /// <summary>
-        /// Sends command message to a grain with the given <see cref="Guid"/> id
+        /// Sends command message to the specified grain
         /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="command">Command message to send</param>
         /// <returns>Promise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(Guid id, TCommand command)
+        protected Task Send(string destination, object command)
         {
-            return bus.Send(id, command);
-        }
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="Int64"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(long id, TCommand command)
-        {
-            return bus.Send(id, command);
-        }
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="string"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send<TCommand>(string id, TCommand command)
-        {
-            return bus.Send(id, command);
+            return bus.Send(destination, command);
         }
 
         /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Guid"/> id and casts result to the specified type
+        /// Sends query message to the specified grain
         /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
+        /// <typeparam name="TResult">Type of the result</typeparam>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="query">Query message to send</param>
         /// <returns>Promise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query)        
+        protected Task<TResult> Query<TResult>(string destination, object query)        
         {
-            return bus.Query<TQuery, TResult>(id, query);
-        }
-        
-        /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Int64"/> id
-        /// and casts result to the specified type
-        /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(long id, TQuery query)        
-        {
-            return bus.Query<TQuery, TResult>(id, query);
-        }
-        
-        /// <summary>
-        /// Sends query message to a grain with the given  <see cref="String"/> id and casts result to the specified type
-        /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TQuery, TResult>(string id, TQuery query)        
-        {
-            return bus.Query<TQuery, TResult>(id, query);
+            return bus.Query<TResult>(destination, query);
         }
 
         #endregion

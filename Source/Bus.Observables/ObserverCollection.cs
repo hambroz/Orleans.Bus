@@ -29,9 +29,9 @@ namespace Orleans.Bus
         /// <summary>
         /// Notifies all attached observers passing given event to each of them.
         /// </summary>
-        /// <param name="sender">An id of the sender</param>
+        /// <param name="source">An id of the source grain</param>
         /// <param name="event">An event</param>
-        void Notify(object sender, object @event);
+        void Notify(string source, object @event);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ namespace Orleans.Bus
                 observers.Remove(observer);
         }
 
-        void IObserverCollection.Notify(object sender, object @event)
+        void IObserverCollection.Notify(string source, object @event)
         {
             var failed = new List<Observes>();
             
@@ -70,7 +70,7 @@ namespace Orleans.Bus
             {
                 try
                 {
-                    observer.On(sender, @event);
+                    observer.On(source, @event);
                 }
                 catch (Exception)
                 {

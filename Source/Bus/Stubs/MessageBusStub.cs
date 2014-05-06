@@ -12,79 +12,30 @@ namespace Orleans.Bus.Stubs
         public readonly List<RecordedObserver> RecordedObservers = new List<RecordedObserver>();
         public readonly List<RecordedSubscription> RecordedSubscriptions = new List<RecordedSubscription>();
 
-        public Action<object, object> OnCommand = (receiver, command) => {};
-        public Func<object, object, Type, object> OnQuery;
+        public Action<string, object> OnCommand = (destination, command) => { };
+        public Func<string, object, Type, object> OnQuery;
             
-        Task IMessageBus.Send<TCommand>(Guid id, TCommand command)
+        Task IMessageBus.Send(string destination, object command)
         {
-            RecordedCommands.Add(new RecordedCommand(id, command));
-            OnCommand(id, command);
+            RecordedCommands.Add(new RecordedCommand(destination, command));
             return TaskDone.Done;
         }
 
-        Task IMessageBus.Send<TCommand>(long id, TCommand command)
+        Task<TResult> IMessageBus.Query<TResult>(string destination, object query)
         {
-            RecordedCommands.Add(new RecordedCommand(id, command));
-            return TaskDone.Done;
-        }
-
-        Task IMessageBus.Send<TCommand>(string id, TCommand command)
-        {
-            RecordedCommands.Add(new RecordedCommand(id, command));
-            return TaskDone.Done;
-        }
-
-        Task<TResult> IMessageBus.Query<TQuery, TResult>(Guid id, TQuery query)
-        {
-            RecordedQueries.Add(new RecordedQuery(id, query, typeof(TResult)));
+            RecordedQueries.Add(new RecordedQuery(destination, query, typeof(TResult)));
             return Task.FromResult(default(TResult));
         }
 
-        Task<TResult> IMessageBus.Query<TQuery, TResult>(long id, TQuery query)
+        Task IMessageBus.Subscribe<TEvent>(string source, IObserver observer)
         {
-            RecordedQueries.Add(new RecordedQuery(id, query, typeof(TResult)));
-            return Task.FromResult(default(TResult));
-        }
-
-        Task<TResult> IMessageBus.Query<TQuery, TResult>(string id, TQuery query)
-        {
-            RecordedQueries.Add(new RecordedQuery(id, query, typeof(TResult)));
-            return Task.FromResult(default(TResult));
-        }
-
-        Task IMessageBus.Subscribe<TEvent>(Guid id, IObserver observer)
-        {
-            RecordedSubscriptions.Add(new RecordedSubscription(id, observer));
+            RecordedSubscriptions.Add(new RecordedSubscription(source, observer));
             return TaskDone.Done;
         }
 
-        Task IMessageBus.Subscribe<TEvent>(long id, IObserver observer)
+        Task IMessageBus.Unsubscribe<TEvent>(string source, IObserver observer)
         {
-            RecordedSubscriptions.Add(new RecordedSubscription(id, observer));
-            return TaskDone.Done;
-        }
-
-        Task IMessageBus.Subscribe<TEvent>(string id, IObserver observer)
-        {
-            RecordedSubscriptions.Add(new RecordedSubscription(id, observer));
-            return TaskDone.Done;
-        }
-
-        Task IMessageBus.Unsubscribe<TEvent>(Guid id, IObserver observer)
-        {
-            RecordedSubscriptions.RemoveAll(x => x.Receiver.Equals(id) && x.Observer == observer);
-            return TaskDone.Done;
-        }
-
-        Task IMessageBus.Unsubscribe<TEvent>(long id, IObserver observer)
-        {
-            RecordedSubscriptions.RemoveAll(x => x.Receiver.Equals(id) && x.Observer == observer);
-            return TaskDone.Done;
-        }
-
-        Task IMessageBus.Unsubscribe<TEvent>(string id, IObserver observer)
-        {
-            RecordedSubscriptions.RemoveAll(x => x.Receiver.Equals(id) && x.Observer == observer);
+            RecordedSubscriptions.RemoveAll(x => x.Source.Equals(source) && x.Observer == observer);
             return TaskDone.Done;
         }
 
@@ -103,25 +54,25 @@ namespace Orleans.Bus.Stubs
 
     public class RecordedCommand
     {
-        public readonly object Receiver;
+        public readonly string Destination;
         public readonly object Command;
 
-        public RecordedCommand(object receiver, object command)
+        public RecordedCommand(string destination, object command)
         {
-            Receiver = receiver;
+            Destination = destination;
             Command = command;
         }
     }
 
     public class RecordedQuery
     {
-        public readonly object Receiver;
+        public readonly string Destination;
         public readonly object Query;
         public readonly Type Result;
 
-        public RecordedQuery(object receiver, object query, Type result)
+        public RecordedQuery(string destination, object query, Type result)
         {
-            Receiver = receiver;
+            Destination = destination;
             Query = query;
             Result = result;
         }
@@ -129,12 +80,12 @@ namespace Orleans.Bus.Stubs
 
     public class RecordedSubscription
     {
-        public readonly object Receiver;
+        public readonly string Source;
         public readonly IObserver Observer;
 
-        public RecordedSubscription(object receiver, IObserver observer)
+        public RecordedSubscription(string source, IObserver observer)
         {
-            Receiver = receiver;
+            Source = source;
             Observer = observer;
         }
     }

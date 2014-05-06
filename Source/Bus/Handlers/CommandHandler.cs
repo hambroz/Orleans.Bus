@@ -18,46 +18,38 @@ namespace Orleans.Bus
         public readonly Type Grain;
         public readonly Type Command;
 
-        protected CommandHandler(Type grain, Type command)
+        readonly Func<object, object, Task> invoker;
+
+        CommandHandler(Type grain, Type command, MethodInfo method)
         {
-            Grain = grain;
+            Grain   = grain;
             Command = command;
+            invoker = Bind(method);
+        }
+
+        Func<object, object, Task> Bind(MethodInfo method)
+        {
+            var target = Expression.Parameter(typeof(object), "target");
+            var argument = Expression.Parameter(typeof(object), "command");
+
+            var typeCast = Expression.Convert(target, Grain);
+            var argumentCast = Expression.Convert(argument, Command);
+            
+            var call = Expression.Call(typeCast, method, new Expression[] {argumentCast});
+            var lambda = Expression.Lambda<Func<object, object, Task>>(call, target, argument);
+
+            return lambda.Compile();
+        }
+
+        public Task Handle(object grain, object command)
+        {
+            return invoker(grain, command);
         }
 
         public static CommandHandler Create(Type grain, MethodInfo method)
         {
             var command = method.GetParameters()[0].ParameterType;
-
-            var handler = typeof(CommandHandler<>).MakeGenericType(command);
-
-            return (CommandHandler)Activator.CreateInstance(handler, new object[] { grain, method });
-        }
-    }
-
-    class CommandHandler<TCommand> : CommandHandler
-    {
-        readonly Func<object, TCommand, Task> invoker;
-
-        public CommandHandler(Type grain, MethodInfo method)
-            : base(grain, typeof(TCommand))
-        {
-            invoker = Bind(grain, method);
-        }
-
-        public Task Handle(object grain, TCommand command)
-        {
-            return invoker(grain, command);
-        }
-
-        static Func<object, TCommand, Task> Bind(Type grain, MethodInfo method)
-        {
-            var target = Expression.Parameter(typeof(object), "target");
-            var command = Expression.Parameter(typeof(TCommand), "command");
-
-            var call = Expression.Call(Expression.Convert(target, grain), method, new Expression[]{command});
-            var lambda = Expression.Lambda<Func<object, TCommand, Task>>(call, target, command);
-
-            return lambda.Compile();
+            return new CommandHandler(grain, command, method);
         }
     }
 }

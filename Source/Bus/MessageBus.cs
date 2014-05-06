@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 namespace Orleans.Bus
@@ -16,122 +17,39 @@ namespace Orleans.Bus
     public interface IMessageBus
     {
         /// <summary>
-        /// Sends command message to a grain with the given <see cref="Guid"/> id
+        /// Sends command message to the specified grain
         /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="command">Command message to send</param>
         /// <returns>Promise</returns>
-        Task Send<TCommand>(Guid id, TCommand command);
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="Int64"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        Task Send<TCommand>(long id, TCommand command);
-        
-        /// <summary>
-        /// Sends command message to a grain with the given <see cref="string"/> id
-        /// </summary>
-        /// <typeparam name="TCommand">The type of command mesage</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="command">The command to send</param>
-        /// <returns>Promise</returns>
-        Task Send<TCommand>(string id, TCommand command);
+        Task Send(string destination, object command);
 
         /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Guid"/> id and casts result to the specified type
+        /// Sends query message to the specified grain
         /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
+        /// <typeparam name="TResult">Type of the result</typeparam>
+        /// <param name="destination">Id of the destination grain</param>
+        /// <param name="query">Query message to send</param>
         /// <returns>Promise</returns>
-        Task<TResult> Query<TQuery, TResult>(Guid id, TQuery query);
+        Task<TResult> Query<TResult>(string destination, object query);
 
         /// <summary>
-        /// Sends query message to a grain with the given  <see cref="Int64"/> id
-        /// and casts result to the specified type
+        /// Subscribes given observer proxy to receive events from the specified grain
         /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        Task<TResult> Query<TQuery, TResult>(long id, TQuery query);
-        
-        /// <summary>
-        /// Sends query message to a grain with the given  <see cref="String"/> id and casts result to the specified type
-        /// </summary>
-        /// <typeparam name="TQuery">The type of query mesage</typeparam>
-        /// <typeparam name="TResult">The type of result</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="query">The query to send</param>
-        /// <returns>Promise</returns>
-        Task<TResult> Query<TQuery, TResult>(string id, TQuery query);
-
-        /// <summary>
-        /// Subscribes given observer to receive events of the specified type 
-        /// from the grain with the given <see cref="Guid"/> id
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="id">Id of a grain</param>
+        /// <typeparam name="TEvent">Type of the event message</typeparam>
+        /// <param name="source">Id of the source grain</param>
         /// <param name="observer">Client observer proxy</param>
         /// <returns>Promise</returns>
-        Task Subscribe<TEvent>(Guid id, IObserver observer);
+        Task Subscribe<TEvent>(string source, IObserver observer);
 
         /// <summary>
-        /// Subscribes given observer to receive events of the specified type 
-        /// from the grain with the given <see cref="Int64"/> id
+        /// Unsubscribes given observer proxy from receiving events from the specified grain
         /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="id">Id of a grain</param>
+        /// <typeparam name="TEvent">Type of the event message</typeparam>
+        /// <param name="source">Id of the source grain</param>
         /// <param name="observer">Client observer proxy</param>
         /// <returns>Promise</returns>
-        Task Subscribe<TEvent>(long id, IObserver observer);
-
-        /// <summary>
-        /// Subscribes given observer to receive events of the specified type 
-        /// from the grain with the given <see cref="String"/> id
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="observer">Client observer proxy</param>
-        /// <returns>Promise</returns>
-        Task Subscribe<TEvent>(string id, IObserver observer);
-
-        /// <summary>
-        /// Unsubscribes given observer from receiving events of the specified type 
-        /// from the grain with the given <see cref="Guid"/> id
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="observer">Client observer proxy</param>
-        /// <returns>Promise</returns>
-        Task Unsubscribe<TEvent>(Guid id, IObserver observer);
-
-        /// <summary>
-        /// Unsubscribes given observer from receiving events of the specified type 
-        /// from the grain with the given <see cref="Int64"/> id
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="observer">Client observer proxy</param>
-        /// <returns>Promise</returns>
-        Task Unsubscribe<TEvent>(long id, IObserver observer);
-
-        /// <summary>
-        /// Unsubscribes given observer from receiving events of the specified type 
-        /// from the grain with the given <see cref="string"/> id
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="id">Id of a grain</param>
-        /// <param name="observer">Client observer proxy</param>
-        /// <returns>Promise</returns>
-        Task Unsubscribe<TEvent>(string id, IObserver observer);
+        Task Unsubscribe<TEvent>(string source, IObserver observer);
 
         /// <summary>
         /// Creates opaque client observer proxy to be used 
@@ -142,8 +60,7 @@ namespace Orleans.Bus
         Task<IObserver> CreateObserver(Observes client);
 
         /// <summary>
-        /// Deletes (make available to GC) an opaque client observer proxy, 
-        /// which was previously created
+        /// Deletes (make available to GC) previously created client observer proxy, 
         /// </summary>
         /// <param name="observer">Client observer proxy</param>
         void DeleteObserver(IObserver observer);
@@ -182,9 +99,7 @@ namespace Orleans.Bus
         MessageBus Initialize()
         {
             foreach (var grain in references.RegisteredGrainTypes())
-            {
-                Register(grain);                
-            }
+                Register(grain);
 
             return this;
         }
@@ -235,98 +150,38 @@ namespace Orleans.Bus
             events.Add(@event, handler);
         }
 
-        Task IMessageBus.Send<TCommand>(Guid id, TCommand command)
+        Task IMessageBus.Send(string destination, object command)
         {
-            return Send(grain => references.Get(grain, id), command);
+            var handler = commands[command.GetType()];
+
+            var grain = references.Get(handler.Grain, destination);
+
+            return handler.Handle(grain, command);
         }
 
-        Task IMessageBus.Send<TCommand>(long id, TCommand command)
+        Task<TResult> IMessageBus.Query<TResult>(string destination, object query)
         {
-            return Send(grain => references.Get(grain, id), command);
-        }
+            var handler = (QueryHandler<TResult>) queries[query.GetType()];
 
-        Task IMessageBus.Send<TCommand>(string id, TCommand command)
-        {
-            return Send(grain => references.Get(grain, id), command);
-        }
-
-        Task Send<TCommand>(Func<Type, object> getReference, TCommand command)
-        {
-            var handler = (CommandHandler<TCommand>) commands[command.GetType()];
-
-            var grain = getReference(handler.Grain);
-
-            return handler.Handle(grain, command);            
-        }
-
-        Task<TResult> IMessageBus.Query<TQuery, TResult>(Guid id, TQuery query)
-        {
-            return Query<TQuery, TResult>(grain => references.Get(grain, id), query);
-        }
-
-        Task<TResult> IMessageBus.Query<TQuery, TResult>(long id, TQuery query)
-        {
-            return Query<TQuery, TResult>(grain => references.Get(grain, id), query);
-        }
-
-        Task<TResult> IMessageBus.Query<TQuery, TResult>(string id, TQuery query)
-        {
-            return Query<TQuery, TResult>(grain => references.Get(grain, id), query);
-        }
-
-        Task<TResult> Query<TQuery, TResult>(Func<Type, object> getReference, TQuery query)
-        {
-            var handler = (QueryHandler<TQuery, TResult>) queries[query.GetType()];
-
-            var reference = getReference(handler.Grain);
+            var reference = references.Get(handler.Grain, destination);
 
             return handler.Handle(reference, query);
         }
 
-        Task IMessageBus.Subscribe<TEvent>(Guid id, IObserver observer)
-        {
-            return Subscribe<TEvent>(grain => references.Get(grain, id), observer);
-        }
-        
-        Task IMessageBus.Subscribe<TEvent>(long id, IObserver observer)
-        {
-            return Subscribe<TEvent>(grain => references.Get(grain, id), observer);
-        }
-        
-        Task IMessageBus.Subscribe<TEvent>(string id, IObserver observer)
-        {
-            return Subscribe<TEvent>(grain => references.Get(grain, id), observer);
-        }
-
-        async Task Subscribe<TEvent>(Func<Type, object> getReference, IObserver observer)
+        async Task IMessageBus.Subscribe<TEvent>(string source, IObserver observer)
         {
             var handler = events[typeof(TEvent)];
 
-            var reference = getReference(handler.Grain);
+            var reference = references.Get(handler.Grain, source);
 
             await handler.Subscribe(reference, observer);
         }
 
-        Task IMessageBus.Unsubscribe<TEvent>(Guid id, IObserver observer)
-        {
-            return Unsubscribe<TEvent>(grain => references.Get(grain, id), observer);
-        }        
-        
-        Task IMessageBus.Unsubscribe<TEvent>(long id, IObserver observer)
-        {
-            return Unsubscribe<TEvent>(grain => references.Get(grain, id), observer);
-        }        
-        
-        Task IMessageBus.Unsubscribe<TEvent>(string id, IObserver observer)
-        {
-            return Unsubscribe<TEvent>(grain => references.Get(grain, id), observer);
-        }
-
-        async Task Unsubscribe<TEvent>(Func<Type, object> getReference, IObserver observer)
+        async Task IMessageBus.Unsubscribe<TEvent>(string source, IObserver observer)
         {
             var handler = events[typeof(TEvent)];
 
-            var reference = getReference(handler.Grain);
+            var reference = references.Get(handler.Grain, source);
 
             await handler.Unsubscribe(reference, observer);
         }
@@ -339,6 +194,20 @@ namespace Orleans.Bus
         void IMessageBus.DeleteObserver(IObserver observer)
         {
             observers.DeleteProxy(observer.GetProxy());
+        }
+
+        [Serializable]
+        internal class HandlerNotFoundException : ApplicationException
+        {
+            const string message = "Can't find handler for '{0}'.\r\nCheck that you've put [ExtendedPrimaryKey] on a grain and [Handler] on method";
+
+            internal HandlerNotFoundException(Type messageType)
+                : base(string.Format(message, messageType))
+            {}
+
+            protected HandlerNotFoundException(SerializationInfo info, StreamingContext context)
+                : base(info, context)
+            {}
         }
     }
 }

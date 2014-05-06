@@ -17,7 +17,7 @@ using Orleans.Bus.Stubs;
 namespace Orleans.Bus
 {
     /// <summary>
-    /// Base class for all kinds of message based grains
+    /// Base class for message based grains
     /// </summary>
     public abstract class MessageBasedGrain : GrainBase, IGrain
         #if GRAIN_STUBBING_ENABLED
@@ -28,7 +28,7 @@ namespace Orleans.Bus
 	}
 
     /// <summary>
-    /// Base class for all kinds of persistent message based grains
+    /// Base class for persistent message based grains
     /// </summary>
     public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IGrain
         #if GRAIN_STUBBING_ENABLED
@@ -61,117 +61,26 @@ namespace Orleans.Bus
 		#endif
 	}
 
-<#string[] ids = new string[]{"Guid", "Int64", "String"};#>
-<#foreach (var id in ids) {#>
     /// <summary>
-    /// Base class for message based grains identifiable by <see cref="<#= id #>"/> identifier
+    /// Base class for observable message based grains
     /// </summary>
-    public abstract class MessageBasedGrainWith<#= id #>Id : MessageBasedGrain, IHave<#= id #>Id
-        #if GRAIN_STUBBING_ENABLED
-            , IStub<#= id #>Id
-        #endif	
-    {
-<# WriteIdBlock(id); #>
-    }
-
-<#}#>
-<#foreach (var id in ids) {#>
-    /// <summary>
-    /// Base class for persistent message based grains identifiable by <see cref="<#= id #>"/> identifier
-    /// </summary>
-    public abstract class MessageBasedGrainWith<#= id #>Id<TState> : MessageBasedGrain<TState>, IHave<#= id #>Id
-        #if GRAIN_STUBBING_ENABLED
-            , IStub<#= id #>Id
-        #endif
-	        where TState : class, IGrainState
-    {
-<# WriteIdBlock(id); #>		
-    }
-
-<#}#>
-<#foreach (var id in ids) {#>
-    /// <summary>
-    /// Base class for observable message based grains identifiable by <see cref="<#= id #>"/> identifier
-    /// </summary>
-    public abstract class ObservableMessageBasedGrainWith<#= id #>Id : MessageBasedGrain, IObservableGrain, IHave<#= id #>Id
+    public abstract class ObservableMessageBasedGrain : MessageBasedGrain, IObservableGrain
         #if GRAIN_STUBBING_ENABLED
             , IStubbedObservableMessageGrain
-            , IStub<#= id #>Id
         #endif
     {
 <#@ include file="ObservableGrainCommon.cs" #>
-<# WriteObservableBlock(id); #>		
     }
 
-<#}#>
-<#foreach (var id in ids) {#>
     /// <summary>
-    /// Base class for persistent observable message based grains identifiable by <see cref="<#= id #>"/> identifier
+    /// Base class for persistent observable message based grains
     /// </summary>
-    public abstract class ObservableMessageBasedGrainWith<#= id #>Id<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain, IHave<#= id #>Id
+    public abstract class ObservableMessageBasedGrain<TGrainState> : MessageBasedGrain<TGrainState>, IObservableGrain
         #if GRAIN_STUBBING_ENABLED
             , IStubbedObservableMessageGrain
-            , IStub<#= id #>Id
         #endif
         where TGrainState : class, IGrainState
     {
 <#@ include file="ObservableGrainCommon.cs" #>
-<# WriteObservableBlock(id); #>
 	}
-
-<#}#>
 }
-<#+
-private void WriteIdBlock(string id)
-{#>
-		#if GRAIN_STUBBING_ENABLED
-		
-        void IStub<#= id #>Id.SetId(<#= id #> id)
-        {
-			explicitId = id;
-		}
-		        
-		<#= id #> explicitId;       	
-
-		#endif
-
-        /// <summary>
-        /// Gets identifier of the current grain.
-        /// </summary>
-        /// <returns><see cref="<#= id #>"/> identifier</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected <#= id #> Id()
-        {
-			#if GRAIN_STUBBING_ENABLED
-			return explicitId;
-			#else
-			return Identity.Of(this);
-			#endif
-        }
-<#+
-}
-#>
-<#+
-private void WriteNotifyBlock()
-{#>
-	    /// <summary>
-        /// Notifies all attached observers registered for a particular type of event,
-		/// passing given event to each of them.
-        /// </summary>
-        /// <typeparam name="TEvent">The type of event</typeparam>
-        /// <param name="e">The event of <typeparamref name="TEvent"/> type</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Notify<TEvent>(TEvent e)
-        {
-            observers.Notify(Id(), e);
-        }
-<#+
-}
-#>
-<#+private void WriteObservableBlock(string id)
-{
-	WriteIdBlock(id);
-	WriteLine("");
-	WriteNotifyBlock();
-}
-#>
