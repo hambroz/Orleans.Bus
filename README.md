@@ -2,6 +2,18 @@
 
 This project aims to bring familiar message bus communication style to Orleans framework.
 
+## Main features
+
+- Developer-driendly api
+- Selective Event subscriptions
+- Reactive Extensions (RX) support
+- Support of higher-order functions (handlers)
+- Convinient exception handling
+- Strongly typed grain identity
+- Receiver identity type checking
+- Unit testing simplicity
+- F# bindings (ala Akka.Net)
+
 ### Prerequisites
 - [Orleans SDK](https://orleans.codeplex.com/wikipage?title=Orleans%20Setup%20for%20Developers&referringTitle=Home "Link to Orleans SDK installation page")
 - Familiarity with Orleans
@@ -13,18 +25,6 @@ To install Orleans.Bus via NuGet, run this command in NuGet package manager cons
 	PM> Install-Package Orleans.Bus
 
 Then follow instructions in [README](https://github.com/yevhen/Orleans.Bus/blob/master/Build/Readme.txt) file.
-
-## Features at glance
-
-- Developer-driendly api
-- Selective Event subscriptions
-- Reactive Extensions (RX) support
-- Support of higher-order functions (handlers)
-- Convinient exception handling
-- Strongly typed grain identity
-- Receiver identity type checking
-- Unit testing simplicity
-- F# bindings (ala Akka.Net)
 
 ## Documentation
 
