@@ -10,11 +10,29 @@ namespace Orleans.Bus
     /// </summary>
     public abstract class MessageBasedGrain : GrainBase, IExposeGrainInternals
     {
+        /// <summary>
+        /// Reference to <see cref="IMessageBus"/>. Points to global runtime-bound implementation by default.
+        /// </summary>
         public IMessageBus Bus;
+
+        /// <summary>
+        /// Reference to grain activation service. Points to runtime-bound implementation by default.
+        /// </summary>
         public IActivation Activation;
+
+        /// <summary>
+        /// Reference to grain timers collection. Points to runtime-bound implementation by default.
+        /// </summary>
         public ITimerCollection Timers;
+
+        /// <summary>
+        /// Reference to grain reminders collection. Points to runtime-bound implementation by default.
+        /// </summary>
         public IReminderCollection Reminders;
 
+        /// <summary>
+        /// Default constructor, which initialize all local services to runtime-bound implementations by default.
+        /// </summary>
         protected MessageBasedGrain()
         {
             Bus = MessageBus.Instance;
@@ -65,11 +83,29 @@ namespace Orleans.Bus
     public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IExposeGrainInternals 
         where TState : class, IGrainState
     {
+        /// <summary>
+        /// Reference to <see cref="IMessageBus"/>. Points to global runtime-bound implementation by default.
+        /// </summary>
         public IMessageBus Bus;
+
+        /// <summary>
+        /// Reference to grain activation service. Points to runtime-bound implementation by default.
+        /// </summary>
         public IActivation Activation;
+
+        /// <summary>
+        /// Reference to grain timers collection. Points to runtime-bound implementation by default.
+        /// </summary>
         public ITimerCollection Timers;
+
+        /// <summary>
+        /// Reference to grain reminders collection. Points to runtime-bound implementation by default.
+        /// </summary>
         public IReminderCollection Reminders;
 
+        /// <summary>
+        /// Default constructor, which initialize all local services to runtime-bound implementations by default.
+        /// </summary>
         protected MessageBasedGrain()
         {
             Bus = MessageBus.Instance;

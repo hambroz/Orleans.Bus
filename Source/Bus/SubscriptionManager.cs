@@ -44,8 +44,14 @@ namespace Orleans.Bus
         void DeleteObserver(IObserver observer);
     }
 
+    /// <summary>
+    /// Runtime-bound implementation of <see cref="ISubscriptionManager"/>
+    /// </summary>
     public class SubscriptionManager : ISubscriptionManager
     {
+        /// <summary>
+        /// Global instance of <see cref="ISubscriptionManager"/>
+        /// </summary>
         public static readonly ISubscriptionManager Instance = 
            new SubscriptionManager(DynamicGrainFactory.Instance).Initialize();
 

@@ -9,7 +9,7 @@
     <projectUrl>http://github.com/yevhen/Orleans.Bus</projectUrl>
     <iconUrl>https://github.com/yevhen/Orleans.Bus/raw/master/Logo.png</iconUrl>
     <description>Message bus for Orleans framework</description>
-    <tags>Orleans messaging bus actor concurrency CQRS</tags>
+    <tags>Orleans messaging bus actor concurrency CQRS testing</tags>
   </metadata>
   <files>
     <file src="Output\Package\Release\Orleans.Bus.dll" target="lib/net45" />
@@ -18,7 +18,6 @@
     <file src="Output\Package\Release\Orleans.Bus.Observables.dll" target="lib/net45" />
     <file src="Output\Package\Release\Orleans.Bus.Observables.xml" target="lib/net45" />
     <file src="Output\Package\Release\Orleans.Bus.Observables.pdb" target="lib/net45" />
-    <file src="Source\Bus.Templates\MessageBasedGrain.cs" target="linked" />   
     <file src="Build\Readme.txt" target="" />    
   </files>
 </package>

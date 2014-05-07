@@ -3,6 +3,9 @@ using System.Linq;
 
 namespace Orleans.Bus
 {
+    /// <summary>
+    /// Manages grain activation lifetime
+    /// </summary>
     public interface IActivation
     {
         /// <summary>

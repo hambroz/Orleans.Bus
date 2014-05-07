@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
+    /// <summary>
+    /// Manages registration of grain timers
+    /// </summary>
     public interface ITimerCollection
     {
         /// <summary>

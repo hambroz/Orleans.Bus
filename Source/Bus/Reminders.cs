@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
+    /// <summary>
+    /// Manages registration of grain reminders
+    /// </summary>
     public interface IReminderCollection
     {
         /// <summary>
