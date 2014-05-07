@@ -28,7 +28,7 @@ namespace Orleans.Bus
 
     [Publisher(typeof(TextPublished))]
     [ExtendedPrimaryKey]
-    public interface ITestObservableMessageBasedGrain : IObservableGrain
+    public interface ITestObservableGrain : IObservableGrain
     {
         [Handler] Task Handle(PublishText cmd);
     }

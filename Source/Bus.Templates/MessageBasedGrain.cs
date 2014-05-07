@@ -18,7 +18,7 @@ namespace Orleans.Bus
             , IStubbedMessageGrain
         #endif
     {
-        readonly IMessageBus bus = 
+        protected readonly IMessageBus Bus = 
         #if GRAIN_STUBBING_ENABLED
             new MessageBusStub();
         #else
@@ -29,7 +29,7 @@ namespace Orleans.Bus
         
         MessageBusStub IStubbedMessageGrain.Bus
         {
-            get {return (MessageBusStub)bus; }
+            get {return (MessageBusStub)Bus; }
         }
         
         #endif
@@ -61,35 +61,6 @@ namespace Orleans.Bus
             this.GetPrimaryKeyLong(out id);
             return id;
 			#endif
-        }
-
-        #endregion
-
-        #region Message exchange shortcuts
-
-        /// <summary>
-        /// Sends command message to the specified grain
-        /// </summary>
-        /// <param name="destination">Id of the destination grain</param>
-        /// <param name="command">Command message to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send(string destination, object command)
-        {
-            return bus.Send(destination, command);
-        }
-
-        /// <summary>
-        /// Sends query message to the specified grain
-        /// </summary>
-        /// <typeparam name="TResult">Type of the result</typeparam>
-        /// <param name="destination">Id of the destination grain</param>
-        /// <param name="query">Query message to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TResult>(string destination, object query)        
-        {
-            return bus.Query<TResult>(destination, query);
         }
 
         #endregion
@@ -399,7 +370,7 @@ namespace Orleans.Bus
         #endif	 
         where TState : class, IGrainState
     {
-        readonly IMessageBus bus = 
+        protected readonly IMessageBus Bus = 
         #if GRAIN_STUBBING_ENABLED
             new MessageBusStub();
         #else
@@ -410,7 +381,7 @@ namespace Orleans.Bus
         
         MessageBusStub IStubbedMessageGrain.Bus
         {
-            get {return (MessageBusStub)bus; }
+            get {return (MessageBusStub)Bus; }
         }
         
         #endif
@@ -442,35 +413,6 @@ namespace Orleans.Bus
             this.GetPrimaryKeyLong(out id);
             return id;
 			#endif
-        }
-
-        #endregion
-
-        #region Message exchange shortcuts
-
-        /// <summary>
-        /// Sends command message to the specified grain
-        /// </summary>
-        /// <param name="destination">Id of the destination grain</param>
-        /// <param name="command">Command message to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task Send(string destination, object command)
-        {
-            return bus.Send(destination, command);
-        }
-
-        /// <summary>
-        /// Sends query message to the specified grain
-        /// </summary>
-        /// <typeparam name="TResult">Type of the result</typeparam>
-        /// <param name="destination">Id of the destination grain</param>
-        /// <param name="query">Query message to send</param>
-        /// <returns>Promise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Task<TResult> Query<TResult>(string destination, object query)        
-        {
-            return bus.Query<TResult>(destination, query);
         }
 
         #endregion

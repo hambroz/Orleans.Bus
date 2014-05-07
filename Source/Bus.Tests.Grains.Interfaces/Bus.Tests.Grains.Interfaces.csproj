@@ -46,8 +46,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ITestObservableMessageBasedGrain.cs" />
-    <Compile Include="ITestMessageBasedGrain.cs" />
+    <Compile Include="ITestObservableGrain.cs" />
+    <Compile Include="ITestGrain.cs" />
     <Compile Include="Meta.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

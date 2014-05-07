@@ -35,7 +35,7 @@ namespace Orleans.Bus
     {}
 
     [ExtendedPrimaryKey]
-    public interface ITestMessageBasedGrain : IGrain
+    public interface ITestGrain : IGrain
     {
         [Handler] Task Handle(DoFoo cmd);
         [Handler] Task Handle(DoBar cmd);
