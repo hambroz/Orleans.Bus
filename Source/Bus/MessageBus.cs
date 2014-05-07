@@ -67,7 +67,7 @@ namespace Orleans.Bus
         void Register(Type grain)
         {
             var handlers = grain.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                .Where(method => method.HasAttribute<HandlerAttribute>());
+                                .Where(method => method.HasAttribute<HandleAttribute>());
 
             foreach (var handler in handlers)
             {
@@ -103,7 +103,7 @@ namespace Orleans.Bus
         {
             var handler = commands[command.GetType()];
 
-            var grain = factory.Get(handler.Grain, destination);
+            var grain = factory.GetReference(handler.Grain, destination);
 
             return handler.Handle(grain, command);
         }
@@ -112,7 +112,7 @@ namespace Orleans.Bus
         {
             var handler = (QueryHandler<TResult>) queries[query.GetType()];
 
-            var reference = factory.Get(handler.Grain, destination);
+            var reference = factory.GetReference(handler.Grain, destination);
 
             return handler.Handle(reference, query);
         }

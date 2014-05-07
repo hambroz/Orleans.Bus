@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Orleans.Bus
@@ -43,7 +42,6 @@ namespace Orleans.Bus
         /// </summary>
         /// <param name="observer">Client observer proxy</param>
         void DeleteObserver(IObserver observer);
-  
     }
 
     public class SubscriptionManager : ISubscriptionManager
@@ -87,7 +85,7 @@ namespace Orleans.Bus
         {
             var handler = events[typeof(TEvent)];
 
-            var reference = factory.Get(handler.Grain, source);
+            var reference = factory.GetReference(handler.Grain, source);
 
             await handler.Subscribe(reference, observer);
         }
@@ -96,7 +94,7 @@ namespace Orleans.Bus
         {
             var handler = events[typeof(TEvent)];
 
-            var reference = factory.Get(handler.Grain, source);
+            var reference = factory.GetReference(handler.Grain, source);
 
             await handler.Unsubscribe(reference, observer);
         }
