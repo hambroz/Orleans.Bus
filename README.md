@@ -4,13 +4,14 @@ This project aims to bring familiar message bus communication style to Orleans f
 
 ## Main features
 
-- Developer-friendly api
-- Command/Query semantics enforcement
-- Selective Event subscriptions
++ Superior developer-friendly API
++ Support for POCO actors
++ Command/Query/Event semantics enforcement
++ Selective subscriptions to discrete events
 - Reactive Extensions (RX) support
-- Support of higher-order functions (handlers)
-- Convinient exception handling
-- Unit testing simplicity
++ Support of higher-order functions (handlers)
++ Convinient exception handling
++ Unit testing simplicity
 
 ### Prerequisites
 - [Orleans SDK](https://orleans.codeplex.com/wikipage?title=Orleans%20Setup%20for%20Developers&referringTitle=Home "Link to Orleans SDK installation page")
