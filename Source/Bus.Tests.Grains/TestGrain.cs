@@ -56,6 +56,11 @@ namespace Orleans.Bus
             barText = cmd.Text;
 
             return TaskDone.Done;
+        }        
+        
+        public Task Handle(ThrowException cmd)
+        {
+            throw new ApplicationException("Test exception unwrapping");
         }
 
         public Task<string> Answer(GetFoo query)

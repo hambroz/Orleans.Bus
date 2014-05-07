@@ -6,17 +6,8 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    /// <summary>
-    /// Utility extension methods for dealing with <see cref="AggregateException"/>
-    /// </summary>
-    public static class AggregateExceptionExtensions
+    static class AggregateExceptionExtensions
     {
-        /// <summary>
-        ///  Unwraps and re-throws an underlying inner exception instead of generic <see cref="AggregateException"/>
-        /// </summary>
-        /// <remarks>The original stack trace will be preserved</remarks>
-        /// <param name="task">Task which throws <see cref="AggregateException"/></param>
-        /// <returns>Unwrapped task</returns>
         public static async Task UnwrapExceptions(this Task task)
         {
             try
@@ -29,13 +20,6 @@ namespace Orleans.Bus
             }
         }
 
-        /// <summary>
-        ///  Unwraps and re-throws an underlying inner exception instead of generic <see cref="AggregateException"/>
-        /// </summary>
-        /// <remarks>The original stack trace will be preserved</remarks>
-        /// <typeparam name="T">Type of task result</typeparam>
-        ///  <param name="task">Task which throws <see cref="AggregateException"/></param>
-        /// <returns>Unwrapped task</returns>
         public static async Task<T> UnwrapExceptions<T>(this Task<T> task)
         {
             try
@@ -48,11 +32,6 @@ namespace Orleans.Bus
             }
         }
 
-        /// <summary>
-        /// Extracts original inner exception while preserving stack trace
-        /// </summary>
-        /// <param name="e">An instance of <see cref="AggregateException"/></param>
-        /// <returns>New <see cref="Exception"/></returns>
         public static Exception OriginalExceptionPreservingStackTrace(this AggregateException e)
         {
             return PreserveStackTrace(OriginalException(e));

@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using System;
+
+using NUnit.Framework;
 
 namespace Orleans.Bus
 {
@@ -27,6 +29,12 @@ namespace Orleans.Bus
 
             var result = await bus.Query<string>("test", new GetFoo());
             Assert.AreEqual("foo-test", result);
+        }
+
+        [Test]
+        public void Should_unwrap_exception()
+        {
+            Assert.Throws<ApplicationException>(async ()=> await bus.Send("test", new ThrowException()));
         }  
     }
 }

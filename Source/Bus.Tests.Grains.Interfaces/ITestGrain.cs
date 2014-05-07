@@ -27,6 +27,10 @@ namespace Orleans.Bus
     }
 
     [Immutable, Serializable]
+    public class ThrowException : Command
+    {}
+
+    [Immutable, Serializable]
     public class GetFoo : Query<string>
     {}
 
@@ -36,6 +40,7 @@ namespace Orleans.Bus
 
     [Handles(typeof(DoFoo))]
     [Handles(typeof(DoBar))]
+    [Handles(typeof(ThrowException))]
     [Answers(typeof(GetFoo))]
     [Answers(typeof(GetBar))]
     [ExtendedPrimaryKey]

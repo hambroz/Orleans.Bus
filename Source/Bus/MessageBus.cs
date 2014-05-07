@@ -155,7 +155,7 @@ namespace Orleans.Bus
                 throw new DispatcherNotFoundException(command.GetType());
 
             var grain = factory.GetReference(dispatcher.Grain, destination);
-            return dispatcher.Dispatch(grain, command);
+            return dispatcher.Dispatch(grain, command).UnwrapExceptions();
         }
 
         async Task<TResult> IMessageBus.Query<TResult>(string destination, object query)
@@ -171,7 +171,7 @@ namespace Orleans.Bus
                 throw new DispatcherNotFoundException(query.GetType());
 
             var reference = factory.GetReference(dispatcher.Grain, destination);
-            return (TResult)(await dispatcher.Dispatch(reference, query));
+            return (TResult)(await dispatcher.Dispatch(reference, query).UnwrapExceptions());
         }
 
         [Serializable]
