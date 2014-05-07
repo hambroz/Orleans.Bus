@@ -73,11 +73,6 @@ namespace Orleans.Bus
             return lambda.Compile();
         }
 
-        public T GetReference<T>(string id)
-        {
-            return (T)GetReference(typeof(T), id);
-        }
-
         public object GetReference(Type type, string id)
         {
             var invoker = grains.Find(type);

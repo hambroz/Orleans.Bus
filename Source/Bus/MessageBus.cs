@@ -67,7 +67,7 @@ namespace Orleans.Bus
         void Register(Type grain)
         {
             var handlers = grain.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                .Where(method => method.HasAttribute<HandleAttribute>());
+                                .Where(method => method.HasAttribute<HandlerAttribute>());
 
             foreach (var handler in handlers)
             {
