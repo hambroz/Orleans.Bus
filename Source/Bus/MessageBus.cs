@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
@@ -10,9 +11,6 @@ namespace Orleans.Bus
     /// <summary>
     /// Central communication hub for message exchanges
     /// between grains and between clients and grains.
-    /// 
-    /// Allows clients to dynamically subscribe/unsubscribe 
-    /// to notifications about particular events.
     /// </summary>
     public interface IMessageBus
     {
@@ -32,38 +30,6 @@ namespace Orleans.Bus
         /// <param name="query">Query message to send</param>
         /// <returns>Promise</returns>
         Task<TResult> Query<TResult>(string destination, object query);
-
-        /// <summary>
-        /// Subscribes given observer proxy to receive events from the specified grain
-        /// </summary>
-        /// <typeparam name="TEvent">Type of the event message</typeparam>
-        /// <param name="source">Id of the source grain</param>
-        /// <param name="observer">Client observer proxy</param>
-        /// <returns>Promise</returns>
-        Task Subscribe<TEvent>(string source, IObserver observer);
-
-        /// <summary>
-        /// Unsubscribes given observer proxy from receiving events from the specified grain
-        /// </summary>
-        /// <typeparam name="TEvent">Type of the event message</typeparam>
-        /// <param name="source">Id of the source grain</param>
-        /// <param name="observer">Client observer proxy</param>
-        /// <returns>Promise</returns>
-        Task Unsubscribe<TEvent>(string source, IObserver observer);
-
-        /// <summary>
-        /// Creates opaque client observer proxy to be used 
-        /// for subscribing to event notifications
-        /// </summary>
-        /// <param name="client">The client</param>
-        /// <returns>Promise</returns>
-        Task<IObserver> CreateObserver(Observes client);
-
-        /// <summary>
-        /// Deletes (make available to GC) previously created client observer proxy, 
-        /// </summary>
-        /// <param name="observer">Client observer proxy</param>
-        void DeleteObserver(IObserver observer);
     }
 
     /// <summary>
@@ -75,8 +41,7 @@ namespace Orleans.Bus
         /// Globally available default instance of <see cref="IMessageBus"/>
         /// </summary>
         public static readonly IMessageBus Instance = 
-            new MessageBus(GrainReferenceService.Instance, GrainObserverService.Instance)
-                .Initialize();
+           new MessageBus(DynamicGrainFactory.Instance).Initialize();
 
         readonly Dictionary<Type, CommandHandler> commands = 
              new Dictionary<Type, CommandHandler>();        
@@ -84,21 +49,16 @@ namespace Orleans.Bus
         readonly Dictionary<Type, QueryHandler> queries =
              new Dictionary<Type, QueryHandler>();
 
-        readonly Dictionary<Type, EventHandler> events =
-             new Dictionary<Type, EventHandler>();
+        readonly DynamicGrainFactory factory;
 
-        readonly GrainReferenceService references;
-        readonly GrainObserverService observers;
-
-        MessageBus(GrainReferenceService references, GrainObserverService observers)
+        MessageBus(DynamicGrainFactory factory)
         {
-            this.references = references;
-            this.observers = observers;
+            this.factory = factory;
         }
 
         MessageBus Initialize()
         {
-            foreach (var grain in references.RegisteredGrainTypes())
+            foreach (var grain in factory.RegisteredGrainTypes())
                 Register(grain);
 
             return this;
@@ -125,11 +85,6 @@ namespace Orleans.Bus
 
                 throw new NotSupportedException("Unsupported handler signature: " + handler);
             }
-
-            foreach (var publisher in grain.Attributes<PublisherAttribute>())
-            {
-                RegisterEventHandler(grain, publisher.Event);
-            }
         }
 
         void RegisterCommandHandler(Type grain, MethodInfo method)
@@ -144,17 +99,11 @@ namespace Orleans.Bus
             queries.Add(handler.Query, handler);
         }
 
-        void RegisterEventHandler(Type grain, Type @event)
-        {
-            var handler = EventHandler.Create(grain, @event);
-            events.Add(@event, handler);
-        }
-
         Task IMessageBus.Send(string destination, object command)
         {
             var handler = commands[command.GetType()];
 
-            var grain = references.Get(handler.Grain, destination);
+            var grain = factory.Get(handler.Grain, destination);
 
             return handler.Handle(grain, command);
         }
@@ -163,37 +112,9 @@ namespace Orleans.Bus
         {
             var handler = (QueryHandler<TResult>) queries[query.GetType()];
 
-            var reference = references.Get(handler.Grain, destination);
+            var reference = factory.Get(handler.Grain, destination);
 
             return handler.Handle(reference, query);
-        }
-
-        async Task IMessageBus.Subscribe<TEvent>(string source, IObserver observer)
-        {
-            var handler = events[typeof(TEvent)];
-
-            var reference = references.Get(handler.Grain, source);
-
-            await handler.Subscribe(reference, observer);
-        }
-
-        async Task IMessageBus.Unsubscribe<TEvent>(string source, IObserver observer)
-        {
-            var handler = events[typeof(TEvent)];
-
-            var reference = references.Get(handler.Grain, source);
-
-            await handler.Unsubscribe(reference, observer);
-        }
-
-        async Task<IObserver> IMessageBus.CreateObserver(Observes client)
-        {
-            return new Observer(await observers.CreateProxy(client));
-        }
-
-        void IMessageBus.DeleteObserver(IObserver observer)
-        {
-            observers.DeleteProxy(observer.GetProxy());
         }
 
         [Serializable]
@@ -208,6 +129,112 @@ namespace Orleans.Bus
             protected HandlerNotFoundException(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {}
+        }
+
+        class CommandHandler
+        {
+            public static bool Satisfies(MethodInfo method)
+            {
+                return !method.IsGenericMethod &&
+                        method.GetParameters().Length == 1 &&
+                        method.ReturnType == typeof(Task);
+            }
+
+            public readonly Type Grain;
+            public readonly Type Command;
+
+            readonly Func<object, object, Task> invoker;
+
+            CommandHandler(Type grain, Type command, MethodInfo method)
+            {
+                Grain = grain;
+                Command = command;
+                invoker = Bind(method);
+            }
+
+            Func<object, object, Task> Bind(MethodInfo method)
+            {
+                var target = Expression.Parameter(typeof(object), "target");
+                var argument = Expression.Parameter(typeof(object), "command");
+
+                var typeCast = Expression.Convert(target, Grain);
+                var argumentCast = Expression.Convert(argument, Command);
+
+                var call = Expression.Call(typeCast, method, new Expression[] { argumentCast });
+                var lambda = Expression.Lambda<Func<object, object, Task>>(call, target, argument);
+
+                return lambda.Compile();
+            }
+
+            public Task Handle(object grain, object command)
+            {
+                return invoker(grain, command);
+            }
+
+            public static CommandHandler Create(Type grain, MethodInfo method)
+            {
+                var command = method.GetParameters()[0].ParameterType;
+                return new CommandHandler(grain, command, method);
+            }
+        }
+    }
+
+    abstract class QueryHandler
+    {
+        public static bool Satisfies(MethodInfo method)
+        {
+            return !method.IsGenericMethod &&
+                   method.GetParameters().Length == 1 &&
+                   typeof(Task).IsAssignableFrom(method.ReturnType) &&
+                   method.ReturnType.IsConstructedGenericType;
+        }
+
+        public readonly Type Grain;
+        public readonly Type Query;
+
+        protected QueryHandler(Type grain, Type query)
+        {
+            Grain = grain;
+            Query = query;
+        }
+
+        public static QueryHandler Create(Type grain, MethodInfo method)
+        {
+            var query = method.GetParameters()[0].ParameterType;
+            var result = method.ReturnType.GetGenericArguments()[0];
+
+            var handler = typeof(QueryHandler<>).MakeGenericType(result);
+            return (QueryHandler)Activator.CreateInstance(handler, new object[] { grain, query, method });
+        }
+    }
+
+    class QueryHandler<TResult> : QueryHandler
+    {
+        readonly Func<object, object, Task<TResult>> invoker;
+
+        public QueryHandler(Type grain, Type query, MethodInfo method)
+            : base(grain, query)
+        {
+            invoker = Bind(method);
+        }
+
+        public Task<TResult> Handle(object grain, object query)
+        {
+            return invoker(grain, query);
+        }
+
+        Func<object, object, Task<TResult>> Bind(MethodInfo method)
+        {
+            var target = Expression.Parameter(typeof(object), "target");
+            var argument = Expression.Parameter(typeof(object), "query");
+
+            var typeCast = Expression.Convert(target, Grain);
+            var argumentCast = Expression.Convert(argument, Query);
+
+            var call = Expression.Call(typeCast, method, new Expression[] { argumentCast });
+            var lambda = Expression.Lambda<Func<object, object, Task<TResult>>>(call, target, argument);
+
+            return lambda.Compile();
         }
     }
 }

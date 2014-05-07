@@ -4,67 +4,59 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public abstract class Grain : MessageBasedGrain
+    public abstract class Grain : GrainBase
     {
-        protected Task Send<TCommand>(string destination, TCommand command) where TCommand : Command
+        protected readonly IMessageBus Bus = MessageBus.Instance;
+    }
+
+    public abstract class Grain<TState> : GrainBase<TState>
+        where TState : class, IGrainState
+    {
+        protected readonly IMessageBus Bus = MessageBus.Instance;
+    }
+
+    public abstract class ObservableGrain : Grain, IObservableGrain
+    {
+        readonly IObserverCollection observers = new ObserverCollection();
+
+        Task IObservableGrain.Attach(Observes o, Type e)
         {
-            return Bus.Send(destination, command);
+            observers.Attach(o, e);
+            return TaskDone.Done;
         }
 
-        protected Task<TResult> Query<TResult>(string destination, Query<TResult> query)
+        Task IObservableGrain.Detach(Observes o, Type e)
         {
-            return Bus.Query<TResult>(destination, query);
+            observers.Detach(o, e);
+            return TaskDone.Done;
+        }
+
+        protected void Notify<TEvent>(TEvent e) where TEvent : Event
+        {
+            observers.Notify(this.Id(), e);
         }
     }
 
-    public abstract class Grain<TState> : MessageBasedGrain<TState> where TState : class, IGrainState
+    public abstract class ObservableGrain<TState> : Grain<TState>, IObservableGrain
+        where TState : class, IGrainState
     {
-        protected Task Send<TCommand>(string destination, TCommand command)
-            where TCommand : Command
+        readonly IObserverCollection observers = new ObserverCollection();
+
+        Task IObservableGrain.Attach(Observes o, Type e)
         {
-            return Bus.Send(destination, command);
+            observers.Attach(o, e);
+            return TaskDone.Done;
         }
 
-        protected Task<TResult> Query<TResult>(string destination, Query<TResult> query)
+        Task IObservableGrain.Detach(Observes o, Type e)
         {
-            return Bus.Query<TResult>(destination, query);
-        }
-    }
-
-    public abstract class ObservableGrain : ObservableMessageBasedGrain
-    {
-        protected Task Send<TCommand>(string destination, TCommand command) where TCommand : Command
-        {
-            return Bus.Send(destination, command);
+            observers.Detach(o, e);
+            return TaskDone.Done;
         }
 
-        protected Task<TResult> Query<TResult>(string destination, Query<TResult> query)
+        protected void Notify<TEvent>(TEvent e) where TEvent : Event
         {
-            return Bus.Query<TResult>(destination, query);
-        }
-
-        protected new void Notify<TEvent>(TEvent @event) where TEvent : Event
-        {
-            base.Notify(@event);
-        }
-    }
-
-    public abstract class ObservableGrain<TState> : ObservableMessageBasedGrain<TState> where TState : class, IGrainState
-    {
-        protected Task Send<TCommand>(string destination, TCommand command)
-            where TCommand : Command
-        {
-            return Bus.Send(destination, command);
-        }
-
-        protected Task<TResult> Query<TResult>(string destination, Query<TResult> query)
-        {
-            return Bus.Query<TResult>(destination, query);
-        }
-
-        protected new void Notify<TEvent>(TEvent @event) where TEvent : Event
-        {
-            base.Notify(@event);
+            observers.Notify(this.Id(), e);
         }
     }
 }

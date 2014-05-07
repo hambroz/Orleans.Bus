@@ -46,9 +46,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Bus.Templates\MessageBasedGrain.cs">
-      <Link>MessageBasedGrain.cs</Link>
-    </Compile>
     <Compile Include="Grain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestObservableGrain.cs" />

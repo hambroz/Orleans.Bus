@@ -48,24 +48,14 @@
       <Link>Properties\ProductAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Attributes.cs" />
+    <Compile Include="DynamicGrainFactory.cs" />
     <Compile Include="Extensions\ReflectionExtensions.cs" />
-    <Compile Include="Handlers\CommandHandler.cs" />
+    <Compile Include="Identity.cs" />
     <Compile Include="MessageBus.cs" />
-    <Compile Include="Meta.cs" />
-    <Compile Include="Runtime\GrainObserverService.cs" />
-    <Compile Include="Runtime\GrainReferenceService.cs" />
-    <Compile Include="Handlers\EventHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Handlers\QueryHandler.cs" />
     <Compile Include="Extensions\AggregateExceptionExtensions.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
-    <Compile Include="Stubs\Grains.cs" />
-    <Compile Include="Stubs\Invocations.cs" />
-    <Compile Include="Stubs\MessageBusStub.cs" />
-    <Compile Include="Stubs\ObserverCollectionStub.cs" />
-    <Compile Include="Stubs\ObserverStub.cs" />
-    <Compile Include="Stubs\ReminderStub.cs" />
-    <Compile Include="Stubs\TimerStub.cs" />
+    <Compile Include="SubscriptionManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Packages.config" />

@@ -9,14 +9,14 @@ using System.Reflection;
 
 namespace Orleans.Bus
 {
-    class GrainReferenceService
+    class DynamicGrainFactory
     {
-        public static readonly GrainReferenceService Instance = new GrainReferenceService().Initialize();
+        public static readonly DynamicGrainFactory Instance = new DynamicGrainFactory().Initialize();
 
         readonly IDictionary<Type, Func<string, object>> grains = 
              new Dictionary<Type, Func<string, object>>();
 
-        GrainReferenceService Initialize()
+        DynamicGrainFactory Initialize()
         {
             var factories = LoadAssemblies()
                 .SelectMany(assembly => assembly.ExportedTypes)

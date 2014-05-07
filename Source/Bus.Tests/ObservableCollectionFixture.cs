@@ -11,18 +11,20 @@ namespace Orleans.Bus
         readonly Type @event = typeof(TextPublished);
 
         IMessageBus bus;
+        ISubscriptionManager subscriptions;
+
         TestClient client;
         IObserver observer;
-
         IObserverCollection collection;
 
         [SetUp]
         public void SetUp()
         {
             bus = MessageBus.Instance;
+            subscriptions = SubscriptionManager.Instance;
 
             client = new TestClient();
-            observer = bus.CreateObserver(client).Result;
+            observer = subscriptions.CreateObserver(client).Result;
 
             collection = new ObserverCollection();
         }
