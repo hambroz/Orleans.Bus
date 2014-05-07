@@ -13,9 +13,9 @@ namespace Orleans.Bus
             return poco.Activate();
         }
 
-        public Task Handle(PublishText cmd)
+        public Task Handle(object cmd)
         {
-            return poco.Handle(cmd);
+            return poco.Handle((dynamic)cmd);
         }
     }
 

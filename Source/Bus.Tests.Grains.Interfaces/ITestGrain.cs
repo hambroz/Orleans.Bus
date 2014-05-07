@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    [Immutable]
+    [Immutable, Serializable]
     public class DoFoo : Command
     {
         public readonly string Text;
@@ -15,7 +15,7 @@ namespace Orleans.Bus
         }
     }
 
-    [Immutable]
+    [Immutable, Serializable]
     public class DoBar : Command
     {
         public readonly string Text;
@@ -26,21 +26,22 @@ namespace Orleans.Bus
         }
     }
 
-    [Immutable]
+    [Immutable, Serializable]
     public class GetFoo : Query<string>
     {}
 
-    [Immutable]
+    [Immutable, Serializable]
     public class GetBar : Query<string>
     {}
 
+    [Handles(typeof(DoFoo))]
+    [Handles(typeof(DoBar))]
+    [Answers(typeof(GetFoo))]
+    [Answers(typeof(GetBar))]
     [ExtendedPrimaryKey]
     public interface ITestGrain : IGrain
     {
-        [Handler] Task Handle(DoFoo cmd);
-        [Handler] Task Handle(DoBar cmd);
-
-        [Handler] Task<string> Answer(GetFoo query);
-        [Handler] Task<string> Answer(GetBar query);
+        [Dispatcher] Task Handle(object cmd);
+        [Dispatcher] Task<object> Answer(object query);
     }
 }

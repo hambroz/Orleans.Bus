@@ -30,5 +30,10 @@ namespace Orleans.Bus
         {
             return @interface.IsAssignableFrom(type);
         }
+
+        public static MethodInfo[] GetPublicInstanceMethods(this Type type)
+        {
+            return type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
+        }
     }
 }

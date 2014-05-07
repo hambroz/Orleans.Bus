@@ -14,30 +14,21 @@ namespace Orleans.Bus
             return poco.Activate();
         }
 
-        public Task Handle(DoFoo cmd)
+        public Task Handle(object cmd)
         {
-            return poco.Handle(cmd);
+            return poco.Handle((dynamic)cmd);
         }
 
-        public Task Handle(DoBar cmd)
+        public async Task<object> Answer(object query)
         {
-            return poco.Handle(cmd);
-        }
-
-        public Task<string> Answer(GetFoo query)
-        {
-            return poco.Answer(query);
-        }
-
-        public Task<string> Answer(GetBar query)
-        {
-            return poco.Answer(query);
+            return await poco.Answer((dynamic)query);
         }
     }
 
     public class TestPoco
     {
         readonly string id;
+
         string fooText = "";
         string barText = "";
 

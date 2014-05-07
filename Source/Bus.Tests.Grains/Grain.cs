@@ -4,16 +4,12 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public abstract class Grain : GrainBase
-    {
-        protected readonly IMessageBus Bus = MessageBus.Instance;
-    }
+    public abstract class Grain : MessageBasedGrain
+    {}
 
-    public abstract class Grain<TState> : GrainBase<TState>
+    public abstract class Grain<TState> : MessageBasedGrain<TState>
         where TState : class, IGrainState
-    {
-        protected readonly IMessageBus Bus = MessageBus.Instance;
-    }
+    {}
 
     public abstract class ObservableGrain : Grain, IObservableGrain
     {

@@ -49,8 +49,8 @@ namespace Orleans.Bus
         public static readonly ISubscriptionManager Instance = 
            new SubscriptionManager(DynamicGrainFactory.Instance).Initialize();
 
-        readonly Dictionary<Type, EventHandler> events =
-             new Dictionary<Type, EventHandler>();
+        readonly Dictionary<Type, EventDispatcher> events =
+             new Dictionary<Type, EventDispatcher>();
 
         readonly DynamicGrainFactory factory;
 
@@ -69,15 +69,15 @@ namespace Orleans.Bus
 
         void Register(Type grain)
         {
-            foreach (var publisher in grain.Attributes<PublisherAttribute>())
+            foreach (var attribute in grain.Attributes<NotifiesAttribute>())
             {
-                RegisterEventHandler(grain, publisher.Event);
+                RegisterEventDispatcher(grain, attribute.Event);
             }
         }
 
-        void RegisterEventHandler(Type grain, Type @event)
+        void RegisterEventDispatcher(Type grain, Type @event)
         {
-            var handler = EventHandler.Create(grain, @event);
+            var handler = EventDispatcher.Create(grain, @event);
             events.Add(@event, handler);
         }
 
@@ -109,20 +109,20 @@ namespace Orleans.Bus
             ObservesFactory.DeleteObjectReference(observer.GetProxy());
         }
 
-        class EventHandler
+        class EventDispatcher
         {
             public readonly Type Grain;
             public readonly Type Event;
 
-            EventHandler(Type grain, Type @event)
+            EventDispatcher(Type grain, Type @event)
             {
                 Grain = grain;
                 Event = @event;
             }
 
-            public static EventHandler Create(Type grain, Type @event)
+            public static EventDispatcher Create(Type grain, Type @event)
             {
-                return new EventHandler(grain, @event);
+                return new EventDispatcher(grain, @event);
             }
 
             public async Task Subscribe(object grain, IObserver observer)

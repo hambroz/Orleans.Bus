@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    [Immutable]
+    [Immutable, Serializable]
     public class PublishText : Command
     {
         public readonly string Text;
@@ -26,10 +26,11 @@ namespace Orleans.Bus
         }
     }
 
-    [Publisher(typeof(TextPublished))]
-    [ExtendedPrimaryKey]
+    [Handles(typeof(PublishText))]
+    [Notifies(typeof(TextPublished))]
+    [ExtendedPrimaryKey] 
     public interface ITestObservableGrain : IObservableGrain
     {
-        [Handler] Task Handle(PublishText cmd);
+        [Dispatcher] Task Handle(object cmd);
     }
 }

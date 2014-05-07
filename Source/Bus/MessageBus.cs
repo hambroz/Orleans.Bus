@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -43,198 +44,284 @@ namespace Orleans.Bus
         public static readonly IMessageBus Instance = 
            new MessageBus(DynamicGrainFactory.Instance).Initialize();
 
-        readonly Dictionary<Type, CommandHandler> commands = 
-             new Dictionary<Type, CommandHandler>();        
-        
-        readonly Dictionary<Type, QueryHandler> queries =
-             new Dictionary<Type, QueryHandler>();
+        readonly HashSet<CommandDispatcher> commandDispatchers = new HashSet<CommandDispatcher>();
+        readonly HashSet<QueryDispatcher> queryDispatchers = new HashSet<QueryDispatcher>();
+
+        readonly Dictionary<Type, CommandDispatcher> commands =
+             new Dictionary<Type, CommandDispatcher>();
+
+        readonly Dictionary<Type, QueryDispatcher> queries =
+             new Dictionary<Type, QueryDispatcher>();
 
         readonly DynamicGrainFactory factory;
 
-        MessageBus(DynamicGrainFactory factory)
+        internal MessageBus(DynamicGrainFactory factory)
         {
             this.factory = factory;
         }
 
         MessageBus Initialize()
         {
-            foreach (var grain in factory.RegisteredGrainTypes())
-                Register(grain);
-
+            Register(factory.RegisteredGrainTypes());
             return this;
+        }
+
+        internal void Register(IEnumerable<Type> grains)
+        {
+            foreach (var grain in grains)
+                Register(grain);
         }
 
         void Register(Type grain)
         {
-            var handlers = grain.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                .Where(method => method.HasAttribute<HandlerAttribute>());
+            RegisterDispatchers(grain);
+            RegisterCommands(grain);
+            RegisterQueries(grain);
+        }
 
-            foreach (var handler in handlers)
+        void RegisterDispatchers(Type grain)
+        {
+            var methods = grain.GetPublicInstanceMethods()
+                               .Where(method => method.HasAttribute<DispatcherAttribute>());
+
+            foreach (var method in methods)
             {
-                if (CommandHandler.Satisfies(handler))
+                if (CommandDispatcher.Satisfies(method))
                 {
-                    RegisterCommandHandler(grain, handler);
+                    if (!commandDispatchers.Add(CommandDispatcher.Create(grain, method)))
+                        throw new DuplicateDispatcherException("command", grain);
+
                     continue;
                 }
 
-                if (QueryHandler.Satisfies(handler))
+                if (QueryDispatcher.Satisfies(method))
                 {
-                    RegisterQueryHandler(grain, handler);
+                    if (!queryDispatchers.Add(QueryDispatcher.Create(grain, method)))
+                        throw new DuplicateDispatcherException("command", grain);
+
                     continue;
                 }
 
-                throw new NotSupportedException("Unsupported handler signature: " + handler);
+                throw new NotSupportedException("Incorrect dispatcher signature: " + method);
             }
         }
 
-        void RegisterCommandHandler(Type grain, MethodInfo method)
+        void RegisterCommands(Type grain)
         {
-            var handler = CommandHandler.Create(grain, method);
-            commands.Add(handler.Command, handler);
+            foreach (var attribute in grain.Attributes<HandlesAttribute>())
+            {
+                Debug.Assert(attribute.Command != null);
+
+                var registered = commands.Find(attribute.Command);
+                if (registered != null)
+                    throw new DuplicateHandlerException(attribute.Command, registered.Grain, grain);
+
+                var dispatcher = commandDispatchers.SingleOrDefault(x => x.Grain == grain);
+                if (dispatcher == null)
+                    throw new DispatcherNotRegisteredException(grain);
+
+                commands.Add(attribute.Command, dispatcher);
+            }
         }
 
-        void RegisterQueryHandler(Type grain, MethodInfo method)
+        void RegisterQueries(Type grain)
         {
-            var handler = QueryHandler.Create(grain, method);
-            queries.Add(handler.Query, handler);
+            foreach (var attribute in grain.Attributes<AnswersAttribute>())
+            {
+                Debug.Assert(attribute.Query != null);
+
+                var registered = queries.Find(attribute.Query);
+                if (registered != null)
+                    throw new DuplicateHandlerException(attribute.Query, registered.Grain, grain);
+
+                var dispatcher = queryDispatchers.SingleOrDefault(x => x.Grain == grain);
+                if (dispatcher == null)
+                    throw new DispatcherNotRegisteredException(grain);
+
+                queries.Add(attribute.Query, dispatcher);
+            }
         }
 
         Task IMessageBus.Send(string destination, object command)
         {
-            var handler = commands[command.GetType()];
+            if (string.IsNullOrEmpty(destination))
+                throw new ArgumentException("Destination id is null or empty", "destination");
 
-            var grain = factory.GetReference(handler.Grain, destination);
+            if (command == null)
+                throw new ArgumentNullException("command");
 
-            return handler.Handle(grain, command);
+            var dispatcher = commands.Find(command.GetType());
+            if (dispatcher == null)
+                throw new DispatcherNotFoundException(command.GetType());
+
+            var grain = factory.GetReference(dispatcher.Grain, destination);
+            return dispatcher.Dispatch(grain, command);
         }
 
-        Task<TResult> IMessageBus.Query<TResult>(string destination, object query)
+        async Task<TResult> IMessageBus.Query<TResult>(string destination, object query)
         {
-            var handler = (QueryHandler<TResult>) queries[query.GetType()];
+            if (string.IsNullOrEmpty(destination))
+                throw new ArgumentException("Destination id is null or empty", "destination");
 
-            var reference = factory.GetReference(handler.Grain, destination);
+            if (query == null)
+                throw new ArgumentNullException("query");
 
-            return handler.Handle(reference, query);
+            var dispatcher = queries.Find(query.GetType());
+            if (dispatcher == null)
+                throw new DispatcherNotFoundException(query.GetType());
+
+            var reference = factory.GetReference(dispatcher.Grain, destination);
+            return (TResult)(await dispatcher.Dispatch(reference, query));
         }
 
         [Serializable]
-        internal class HandlerNotFoundException : ApplicationException
+        internal class DuplicateHandlerException : ApplicationException
         {
-            const string message = "Can't find handler for '{0}'.\r\nCheck that you've put [ExtendedPrimaryKey] on a grain and [Handler] on method";
+            const string description = "The handler for {0} is already registered by {1}. Duplicate grain: {2}";
 
-            internal HandlerNotFoundException(Type messageType)
-                : base(string.Format(message, messageType))
+            public DuplicateHandlerException(Type message, Type registeredBy, Type duplicate)
+                : base(string.Format(description, message, registeredBy, duplicate))
             {}
 
-            protected HandlerNotFoundException(SerializationInfo info, StreamingContext context)
+            protected DuplicateHandlerException(SerializationInfo info, StreamingContext context)
+                : base(info, context)
+            {}
+        }        
+        
+        [Serializable]
+        internal class DuplicateDispatcherException : ApplicationException
+        {
+            const string description = "Duplicate {0} dispatcher is specified by {1}";
+
+            public DuplicateDispatcherException(string kind, Type grain)
+                : base(string.Format(description, kind, grain))
+            {}
+
+            protected DuplicateDispatcherException(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {}
         }
 
-        class CommandHandler
+        [Serializable]
+        internal class DispatcherNotRegisteredException : ApplicationException
+        {
+            const string description = "{0} specifies [Handles/Answers] attributes but no dispatcher could be found.\r\nCheck that you've put [Dispatcher] attribute on a method";
+
+            internal DispatcherNotRegisteredException(Type grain)
+                : base(string.Format(description, grain))
+            {}
+
+            protected DispatcherNotRegisteredException(SerializationInfo info, StreamingContext context)
+                : base(info, context)
+            {}
+        }
+
+        [Serializable]
+        internal class DispatcherNotFoundException : ApplicationException
+        {
+            const string description = "Can't find dispatcher for '{0}'.\r\nCheck that you've marked grain with [ExtendedPrimaryKey] and corresponding [Handles/Answers] attributes";
+
+            internal DispatcherNotFoundException(Type message)
+                : base(string.Format(description, message))
+            {}
+
+            protected DispatcherNotFoundException(SerializationInfo info, StreamingContext context)
+                : base(info, context)
+            {}
+        }
+
+        abstract class Dispatcher
+        {
+            public readonly Type Grain;
+
+            protected Dispatcher(Type grain)
+            {
+                Grain = grain;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj))
+                    return false;
+                
+                if (ReferenceEquals(this, obj))
+                    return true;
+
+                return obj.GetType() == GetType() && Equals(obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return Grain.GetHashCode();
+            }
+        }
+
+        class CommandDispatcher : Dispatcher
         {
             public static bool Satisfies(MethodInfo method)
             {
                 return !method.IsGenericMethod &&
                         method.GetParameters().Length == 1 &&
+                        method.GetParameters()[0].ParameterType == typeof(object) &&
                         method.ReturnType == typeof(Task);
             }
 
-            public readonly Type Grain;
-            public readonly Type Command;
-
-            readonly Func<object, object, Task> invoker;
-
-            CommandHandler(Type grain, Type command, MethodInfo method)
+            public static CommandDispatcher Create(Type grain, MethodInfo method)
             {
-                Grain = grain;
-                Command = command;
-                invoker = Bind(method);
+                return new CommandDispatcher(grain, method);
             }
 
-            Func<object, object, Task> Bind(MethodInfo method)
+            readonly Func<object, object, Task> dispatch;
+
+            CommandDispatcher(Type grain, MethodInfo method) : base(grain)
             {
                 var target = Expression.Parameter(typeof(object), "target");
                 var argument = Expression.Parameter(typeof(object), "command");
 
-                var typeCast = Expression.Convert(target, Grain);
-                var argumentCast = Expression.Convert(argument, Command);
-
-                var call = Expression.Call(typeCast, method, new Expression[] { argumentCast });
+                var call = Expression.Call(Expression.Convert(target, Grain), method, new Expression[] { argument });
                 var lambda = Expression.Lambda<Func<object, object, Task>>(call, target, argument);
 
-                return lambda.Compile();
+                dispatch = lambda.Compile();
             }
 
-            public Task Handle(object grain, object command)
+            public Task Dispatch(object grain, object command)
             {
-                return invoker(grain, command);
+                return dispatch(grain, command);
             }
+        }
 
-            public static CommandHandler Create(Type grain, MethodInfo method)
+        class QueryDispatcher : Dispatcher
+        {
+            public static bool Satisfies(MethodInfo method)
             {
-                var command = method.GetParameters()[0].ParameterType;
-                return new CommandHandler(grain, command, method);
+                return !method.IsGenericMethod &&
+                        method.GetParameters().Length == 1 &&
+                        method.GetParameters()[0].ParameterType == typeof(object) &&
+                        method.ReturnType == typeof(Task<object>);
             }
-        }
-    }
 
-    abstract class QueryHandler
-    {
-        public static bool Satisfies(MethodInfo method)
-        {
-            return !method.IsGenericMethod &&
-                   method.GetParameters().Length == 1 &&
-                   typeof(Task).IsAssignableFrom(method.ReturnType) &&
-                   method.ReturnType.IsConstructedGenericType;
-        }
+            readonly Func<object, object, Task<object>> dispatch;
 
-        public readonly Type Grain;
-        public readonly Type Query;
+            public static QueryDispatcher Create(Type grain, MethodInfo method)
+            {
+                return new QueryDispatcher(grain, method);
+            }
 
-        protected QueryHandler(Type grain, Type query)
-        {
-            Grain = grain;
-            Query = query;
-        }
+            QueryDispatcher(Type grain, MethodInfo method) : base(grain)
+            {
+                var target = Expression.Parameter(typeof(object), "target");
+                var argument = Expression.Parameter(typeof(object), "query");
 
-        public static QueryHandler Create(Type grain, MethodInfo method)
-        {
-            var query = method.GetParameters()[0].ParameterType;
-            var result = method.ReturnType.GetGenericArguments()[0];
+                var call = Expression.Call(Expression.Convert(target, Grain), method, new Expression[] { argument });
+                var lambda = Expression.Lambda<Func<object, object, Task<object>>>(call, target, argument);
 
-            var handler = typeof(QueryHandler<>).MakeGenericType(result);
-            return (QueryHandler)Activator.CreateInstance(handler, new object[] { grain, query, method });
-        }
-    }
+                dispatch = lambda.Compile();
+            }
 
-    class QueryHandler<TResult> : QueryHandler
-    {
-        readonly Func<object, object, Task<TResult>> invoker;
-
-        public QueryHandler(Type grain, Type query, MethodInfo method)
-            : base(grain, query)
-        {
-            invoker = Bind(method);
-        }
-
-        public Task<TResult> Handle(object grain, object query)
-        {
-            return invoker(grain, query);
-        }
-
-        Func<object, object, Task<TResult>> Bind(MethodInfo method)
-        {
-            var target = Expression.Parameter(typeof(object), "target");
-            var argument = Expression.Parameter(typeof(object), "query");
-
-            var typeCast = Expression.Convert(target, Grain);
-            var argumentCast = Expression.Convert(argument, Query);
-
-            var call = Expression.Call(typeCast, method, new Expression[] { argumentCast });
-            var lambda = Expression.Lambda<Func<object, object, Task<TResult>>>(call, target, argument);
-
-            return lambda.Compile();
+            public Task<object> Dispatch(object grain, object query)
+            {
+                return dispatch(grain, query);
+            }
         }
     }
 }
