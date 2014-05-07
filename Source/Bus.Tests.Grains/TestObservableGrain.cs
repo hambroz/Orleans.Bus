@@ -5,26 +5,26 @@ namespace Orleans.Bus
 {
     public class TestObservableGrain : ObservableGrain, ITestObservableGrain
     {
-        TestObservableActor actor;
+        TestObservablePoco poco;
 
         public override Task ActivateAsync()
         {
-            actor = new TestObservableActor(this.Id(), Notify);
-            return actor.Activate();
+            poco = new TestObservablePoco(this.Id(), Notify);
+            return poco.Activate();
         }
 
         public Task Handle(PublishText cmd)
         {
-            return actor.Handle(cmd);
+            return poco.Handle(cmd);
         }
     }
 
-    class TestObservableActor
+    class TestObservablePoco
     {
         readonly string id;
         readonly Action<Event> notify;
 
-        public TestObservableActor(string id, Action<Event> notify)
+        public TestObservablePoco(string id, Action<Event> notify)
         {
             this.id = id;
             this.notify = notify;

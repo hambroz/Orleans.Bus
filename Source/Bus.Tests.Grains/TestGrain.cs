@@ -6,42 +6,42 @@ namespace Orleans.Bus
 {
     public class TestGrain : Grain, ITestGrain
     {
-        TestActor actor;
+        TestPoco poco;
 
         public override Task ActivateAsync()
         {
-            actor = new TestActor(this.Id());
-            return actor.Activate();
+            poco = new TestPoco(this.Id());
+            return poco.Activate();
         }
 
         public Task Handle(DoFoo cmd)
         {
-            return actor.Handle(cmd);
+            return poco.Handle(cmd);
         }
 
         public Task Handle(DoBar cmd)
         {
-            return actor.Handle(cmd);
+            return poco.Handle(cmd);
         }
 
         public Task<string> Answer(GetFoo query)
         {
-            return actor.Answer(query);
+            return poco.Answer(query);
         }
 
         public Task<string> Answer(GetBar query)
         {
-            return actor.Answer(query);
+            return poco.Answer(query);
         }
     }
 
-    public class TestActor
+    public class TestPoco
     {
         readonly string id;
         string fooText = "";
         string barText = "";
 
-        public TestActor(string id)
+        public TestPoco(string id)
         {
             this.id = id;
         }
