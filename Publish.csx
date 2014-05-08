@@ -30,6 +30,7 @@ static string DebugOutputPath = @"{PackagePath}\Debug";
 static string ReleaseOutputPath = @"{PackagePath}\Release";
 
 static Func<string> PackageFile = () => PackagePath + @"\{Project}.{Version()}.nupkg";
+static Func<string> ReactivePackageFile = () => PackagePath + @"\{Project}.Reactive.{Version()}.nupkg";
 static Func<string> ArchiveFile = () => OutputPath + @"\{Version()}.zip";
 
 /// <summary> 
@@ -58,6 +59,7 @@ static Func<string> ArchiveFile = () => OutputPath + @"\{Version()}.zip";
 [Task] public static void NuGet()
 {
 	Cmd.Exec(@"Tools\Nuget.exe push {PackageFile()} $NuGetApiKey$");
+	Cmd.Exec(@"Tools\Nuget.exe push {ReactivePackageFile()} $NuGetApiKey$");
 }
 
 

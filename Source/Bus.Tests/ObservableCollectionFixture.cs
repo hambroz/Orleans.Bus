@@ -11,20 +11,18 @@ namespace Orleans.Bus
         readonly Type @event = typeof(TextPublished);
 
         IMessageBus bus;
-        ISubscriptionManager subscriptions;
-
-        TestClient client;
-        IObserver observer;
         IObserverCollection collection;
+
+        IObserve client;
+        IObserve proxy;
 
         [SetUp]
         public void SetUp()
         {
             bus = MessageBus.Instance;
-            subscriptions = SubscriptionManager.Instance;
 
-            client = new TestClient();
-            observer = subscriptions.CreateObserver(client).Result;
+            client = new Observe();
+            proxy  = SubscriptionManager.Instance.CreateProxy(client).Result;
 
             collection = new ObserverCollection();
         }
@@ -32,10 +30,10 @@ namespace Orleans.Bus
         [Test]
         public void Attach_is_idempotent()
         {
-            collection.Attach(observer.GetProxy(), @event);
+            collection.Attach(proxy, @event);
             
             Assert.DoesNotThrow(() => 
-                collection.Attach(observer.GetProxy(), @event));
+                collection.Attach(proxy, @event));
 
             Assert.AreEqual(1, GetObservers(@event).Count);
         }
@@ -43,18 +41,24 @@ namespace Orleans.Bus
         [Test]
         public void Detach_is_idempotent()
         {
-            collection.Attach(observer.GetProxy(), @event);
-            collection.Detach(observer.GetProxy(), @event);
+            collection.Attach(proxy, @event);
+            collection.Detach(proxy, @event);
             
             Assert.DoesNotThrow(() => 
-                collection.Detach(observer.GetProxy(), @event));
+                collection.Detach(proxy, @event));
 
             Assert.AreEqual(0, GetObservers(@event).Count);
         }
 
-        HashSet<Observes> GetObservers(Type @event)
+        HashSet<IObserve> GetObservers(Type @event)
         {
             return ((ObserverCollection)collection).Observers(@event);
+        }
+
+        class Observe : IObserve
+        {
+            public void On(string source, object e)
+            {}
         }
     }
 }

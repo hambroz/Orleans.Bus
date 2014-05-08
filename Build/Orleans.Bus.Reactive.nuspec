@@ -1,0 +1,23 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Orleans.Bus.Reactive</id>
+    <version>$version$</version>
+    <authors>Yevhen Bobrov</authors>
+    <owners>Yevhen Bobrov</owners>
+    <licenseUrl>http://github.com/yevhen/Orleans.Bus/blob/master/LICENSE</licenseUrl>
+    <projectUrl>http://github.com/yevhen/Orleans.Bus</projectUrl>
+    <iconUrl>https://github.com/yevhen/Orleans.Bus/raw/master/Source/Bus.Reactive/Logo.png</iconUrl>
+    <description>Reactive Extensions support for Orleans.Bus</description>
+    <tags>Orleans messaging bus actor concurrency CQRS reactive RX</tags>
+    <dependencies>
+        <dependency id="Orleans.Bus" version="$version$" />
+        <dependency id="RX-Main" version="1.0.11226" />
+    </dependencies>      
+  </metadata>
+  <files>
+    <file src="Output\Package\Release\Orleans.Bus.Reactive.dll" target="lib/net45" />
+    <file src="Output\Package\Release\Orleans.Bus.Reactive.xml" target="lib/net45" />
+    <file src="Output\Package\Release\Orleans.Bus.Reactive.pdb" target="lib/net45" />    
+  </files>
+</package>

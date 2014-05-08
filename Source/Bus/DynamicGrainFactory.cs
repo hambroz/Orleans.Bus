@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace Orleans.Bus
 {
-    class DynamicGrainFactory
+    internal class DynamicGrainFactory
     {
         public static readonly DynamicGrainFactory Instance = new DynamicGrainFactory().Initialize();
 

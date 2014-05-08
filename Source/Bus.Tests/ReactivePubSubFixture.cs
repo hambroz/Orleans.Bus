@@ -6,10 +6,10 @@ using NUnit.Framework;
 namespace Orleans.Bus
 {
     [TestFixture]
-    public class PubSubFixture
+    public class ReactivePubSubFixture
     {
         IMessageBus bus;
-
+        
         [SetUp]
         public void SetUp()
         {
@@ -21,17 +21,18 @@ namespace Orleans.Bus
         {
             const string grainId = "11";
 
-            using (var proxy = await ObservableProxy.Create())
+            using (var proxy = await ReactiveObservableProxy.Create())
             {
                 var received = new AutoResetEvent(false);
 
                 string source = null;
                 TextPublished @event = null;
 
-                await proxy.Attach<TextPublished>(grainId, (s, e) =>
+                var observable = await proxy.Attach<TextPublished>(grainId);
+                observable.Subscribe(e =>
                 {
-                    source = s;
-                    @event = e;
+                    source = e.Source;
+                    @event = e.Message;
                     received.Set();
                 });
 
@@ -45,21 +46,22 @@ namespace Orleans.Bus
         }
 
         [Test]
-        public async void Loose_subscriptions()
+        public async void Loose_subscription()
         {
             const string grainId = "11";
 
-            using (var proxy = await ObservableProxy.Create())
+            using (var proxy = await ReactiveObservableProxy.Create())
             {
                 var received = new AutoResetEvent(false);
 
                 string source = null;
                 TextPublished @event = null;
 
-                await proxy.AttachLoose<TextPublished>(grainId, (s, e) =>
+                var observable = await proxy.AttachLoose<TextPublished>(grainId);
+                observable.Subscribe(e =>
                 {
-                    source = s;
-                    @event = (TextPublished)e;
+                    source = e.Source;
+                    @event = (TextPublished) e.Message;
                     received.Set();
                 });
 

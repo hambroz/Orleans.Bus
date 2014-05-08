@@ -21,17 +21,7 @@ namespace Orleans.Bus
             return provider.GetCustomAttributes(typeof(TAttribute), inherit).Cast<TAttribute>();
         }
 
-        public static bool Implements<TInterface>(this Type type)
-        {
-            return type.Implements(typeof(TInterface));
-        }
-
-        public static bool Implements(this Type type, Type @interface)
-        {
-            return @interface.IsAssignableFrom(type);
-        }
-
-        public static MethodInfo[] GetPublicInstanceMethods(this Type type)
+        public static IEnumerable<MethodInfo> GetPublicInstanceMethods(this Type type)
         {
             return type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
         }

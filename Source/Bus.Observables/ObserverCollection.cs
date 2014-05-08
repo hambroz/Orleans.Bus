@@ -16,7 +16,7 @@ namespace Orleans.Bus
         /// <param name="observer">The observer proxy.</param>
         /// <param name="event">The type of event</param>
         /// <remarks>The operation is dempotent</remarks>
-        void Attach(Observes observer, Type @event);
+        void Attach(IObserve observer, Type @event);
 
         /// <summary>
         /// Detaches given observer for the given type of event.
@@ -24,7 +24,7 @@ namespace Orleans.Bus
         /// <param name="observer">The observer proxy.</param>
         /// <param name="event">The type of event</param>
         /// <remarks>The operation is dempotent</remarks>
-        void Detach(Observes observer, Type @event);
+        void Detach(IObserve observer, Type @event);
 
         /// <summary>
         /// Notifies all attached observers passing given event to each of them.
@@ -39,22 +39,22 @@ namespace Orleans.Bus
     /// </summary>
     public class ObserverCollection : IObserverCollection
     {
-        readonly IDictionary<Type, HashSet<Observes>> subscriptions = new Dictionary<Type, HashSet<Observes>>();
+        readonly IDictionary<Type, HashSet<IObserve>> subscriptions = new Dictionary<Type, HashSet<IObserve>>();
 
-        void IObserverCollection.Attach(Observes observer, Type @event)
+        void IObserverCollection.Attach(IObserve observer, Type @event)
         {
             var observers = Observers(@event);
 
             if (observers == null)
             {
-                observers = new HashSet<Observes>();
+                observers = new HashSet<IObserve>();
                 subscriptions.Add(@event, observers);
             }
 
             observers.Add(observer);
         }
 
-        void IObserverCollection.Detach(Observes observer, Type @event)
+        void IObserverCollection.Detach(IObserve observer, Type @event)
         {
             var observers = Observers(@event);
             
@@ -64,7 +64,7 @@ namespace Orleans.Bus
 
         void IObserverCollection.Notify(string source, object @event)
         {
-            var failed = new List<Observes>();
+            var failed = new List<IObserve>();
             
             foreach (var observer in Observers(@event.GetType()))
             {
@@ -81,9 +81,9 @@ namespace Orleans.Bus
             Observers(@event.GetType()).RemoveWhere(failed.Contains);
         }
 
-        internal HashSet<Observes> Observers(Type @event)
+        internal HashSet<IObserve> Observers(Type @event)
         {
-            HashSet<Observes> observers;
+            HashSet<IObserve> observers;
             return subscriptions.TryGetValue(@event, out observers) ? observers : null;
         }
     }

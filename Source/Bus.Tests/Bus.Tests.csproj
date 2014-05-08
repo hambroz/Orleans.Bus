@@ -31,9 +31,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NSubstitute">
-      <HintPath>..\..\packages\NSubstitute.1.7.2.0\lib\NET45\NSubstitute.dll</HintPath>
-    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
@@ -56,6 +53,10 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Reactive, Version=1.0.10621.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\..\packages\Rx-Main.1.0.11226\lib\Net4\System.Reactive.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
@@ -65,8 +66,8 @@
     <Compile Include="ObservableCollectionFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PubSubFixture.cs" />
+    <Compile Include="ReactivePubSubFixture.cs" />
     <Compile Include="RequestResponseFixture.cs" />
-    <Compile Include="TestClient.cs" />
     <Compile Include="Utility\OrleansSiloForTesting.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +77,10 @@
     <ProjectReference Include="..\Bus.Observables\Bus.Observables.csproj">
       <Project>{ebb46e7e-96f5-41b7-9bbf-155b540a543b}</Project>
       <Name>Bus.Observables</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Bus.Reactive\Bus.Reactive.csproj">
+      <Project>{1048a675-f2de-4f52-807a-3b1c53185ac6}</Project>
+      <Name>Bus.Reactive</Name>
     </ProjectReference>
     <ProjectReference Include="..\Bus.Tests.Grains.Interfaces\Bus.Tests.Grains.Interfaces.csproj">
       <Project>{3d7a4d04-6d86-458a-9c52-331fae3d428c}</Project>

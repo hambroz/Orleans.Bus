@@ -80,6 +80,9 @@ public const string OutputPath = RootPath + @"\Output";
 
 	Cmd.Exec(@"Tools\Nuget.exe pack Build\{Project}.nuspec -Version {version} " +
 			  "-OutputDirectory {packagePath} -BasePath {RootPath} -NoPackageAnalysis");
+
+	Cmd.Exec(@"Tools\Nuget.exe pack Build\{Project}.Reactive.nuspec -Version {version} " +
+			  "-OutputDirectory {packagePath} -BasePath {RootPath} -NoPackageAnalysis");
 }
 
 /// <summary> 

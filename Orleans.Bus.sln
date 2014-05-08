@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bus.Tests", "Source\Bus.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bus.Observables", "Source\Bus.Observables\Bus.Observables.csproj", "{EBB46E7E-96F5-41B7-9BBF-155B540A543B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bus.Reactive", "Source\Bus.Reactive\Bus.Reactive.csproj", "{1048A675-F2DE-4F52-807A-3B1C53185AC6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{EBB46E7E-96F5-41B7-9BBF-155B540A543B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EBB46E7E-96F5-41B7-9BBF-155B540A543B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EBB46E7E-96F5-41B7-9BBF-155B540A543B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1048A675-F2DE-4F52-807A-3B1C53185AC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1048A675-F2DE-4F52-807A-3B1C53185AC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1048A675-F2DE-4F52-807A-3B1C53185AC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1048A675-F2DE-4F52-807A-3B1C53185AC6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

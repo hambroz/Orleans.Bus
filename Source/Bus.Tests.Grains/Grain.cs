@@ -15,13 +15,13 @@ namespace Orleans.Bus
     {
         readonly IObserverCollection observers = new ObserverCollection();
 
-        Task IObservableGrain.Attach(Observes o, Type e)
+        Task IObservableGrain.Attach(IObserve o, Type e)
         {
             observers.Attach(o, e);
             return TaskDone.Done;
         }
 
-        Task IObservableGrain.Detach(Observes o, Type e)
+        Task IObservableGrain.Detach(IObserve o, Type e)
         {
             observers.Detach(o, e);
             return TaskDone.Done;
@@ -38,13 +38,13 @@ namespace Orleans.Bus
     {
         readonly IObserverCollection observers = new ObserverCollection();
 
-        Task IObservableGrain.Attach(Observes o, Type e)
+        Task IObservableGrain.Attach(IObserve o, Type e)
         {
             observers.Attach(o, e);
             return TaskDone.Done;
         }
 
-        Task IObservableGrain.Detach(Observes o, Type e)
+        Task IObservableGrain.Detach(IObserve o, Type e)
         {
             observers.Detach(o, e);
             return TaskDone.Done;
