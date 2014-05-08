@@ -8,7 +8,7 @@ This project aims to bring familiar message bus communication style to Orleans f
 + Support for POCO actors
 + Command/Query/Event semantics enforcement
 + Selective subscriptions to discrete events
-- Reactive Extensions (RX) support (PLANNED)
+- Reactive Extensions (RX) support
 + Support for higher-order functions (handlers)
 + Convinient exception handling
 + Unit testing simplicity
