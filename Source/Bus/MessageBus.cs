@@ -44,14 +44,14 @@ namespace Orleans.Bus
         public static readonly IMessageBus Instance = 
            new MessageBus(DynamicGrainFactory.Instance).Initialize();
 
-        readonly HashSet<CommandDispatcher> commandDispatchers = new HashSet<CommandDispatcher>();
-        readonly HashSet<QueryDispatcher> queryDispatchers = new HashSet<QueryDispatcher>();
+        readonly HashSet<CommandHandler> commandHandlers = new HashSet<CommandHandler>();
+        readonly HashSet<QueryHandler> queryHandlers = new HashSet<QueryHandler>();
 
-        readonly Dictionary<Type, CommandDispatcher> commands =
-             new Dictionary<Type, CommandDispatcher>();
+        readonly Dictionary<Type, CommandHandler> commands =
+             new Dictionary<Type, CommandHandler>();
 
-        readonly Dictionary<Type, QueryDispatcher> queries =
-             new Dictionary<Type, QueryDispatcher>();
+        readonly Dictionary<Type, QueryHandler> queries =
+             new Dictionary<Type, QueryHandler>();
 
         readonly DynamicGrainFactory factory;
 
@@ -74,35 +74,56 @@ namespace Orleans.Bus
 
         void Register(Type grain)
         {
-            RegisterDispatchers(grain);
+            RegisterHandlers(grain);
             RegisterCommands(grain);
             RegisterQueries(grain);
         }
 
-        void RegisterDispatchers(Type grain)
+        void RegisterHandlers(Type grain)
         {
-            var methods = grain.GetPublicInstanceMethods()
-                               .Where(method => method.HasAttribute<DispatcherAttribute>());
+            var handlers = FindHandlers(grain);
 
-            foreach (var method in methods)
+            foreach (var handler in handlers)
             {
-                if (CommandDispatcher.Satisfies(method))
+                if (CommandHandler.Satisfies(handler))
                 {
-                    if (!commandDispatchers.Add(CommandDispatcher.Create(grain, method)))
-                        throw new DuplicateDispatcherException("command", grain);
+                    if (!commandHandlers.Add(CommandHandler.Create(grain, handler)))
+                        throw new DuplicateHandlerMethodException("command", grain);
 
                     continue;
                 }
 
-                if (QueryDispatcher.Satisfies(method))
+                if (QueryHandler.Satisfies(handler))
                 {
-                    if (!queryDispatchers.Add(QueryDispatcher.Create(grain, method)))
-                        throw new DuplicateDispatcherException("command", grain);
+                    if (!queryHandlers.Add(QueryHandler.Create(grain, handler)))
+                        throw new DuplicateHandlerMethodException("command", grain);
 
                     continue;
                 }
 
-                throw new NotSupportedException("Incorrect dispatcher signature: " + method);
+                throw new NotSupportedException("Incorrect handler signature: " + handler);
+            }
+        }
+
+        static IEnumerable<MethodInfo> FindHandlers(Type grain)
+        {
+            var result = new HashSet<MethodInfo>();
+            FindHandlers(grain, result);
+            return result;            
+        }
+
+        static void FindHandlers(Type grain, ISet<MethodInfo> result)
+        {
+            var methods = grain.GetMethods().Where(
+                 method => method.HasAttribute<HandlerAttribute>());
+            
+            foreach (var method in methods)
+                result.Add(method);
+
+            foreach (var @interface in grain.GetInterfaces())
+            {
+                if (typeof(IGrain).IsAssignableFrom(@interface))
+                    FindHandlers(@interface, result);
             }
         }
 
@@ -114,11 +135,11 @@ namespace Orleans.Bus
 
                 var registered = commands.Find(attribute.Command);
                 if (registered != null)
-                    throw new DuplicateHandlerException(attribute.Command, registered.Grain, grain);
+                    throw new DuplicateHandlesAttributeException(attribute.Command, registered.Grain, grain);
 
-                var dispatcher = commandDispatchers.SingleOrDefault(x => x.Grain == grain);
+                var dispatcher = commandHandlers.SingleOrDefault(x => x.Grain == grain);
                 if (dispatcher == null)
-                    throw new DispatcherNotRegisteredException(grain);
+                    throw new HandlerNotRegisteredException(grain);
 
                 commands.Add(attribute.Command, dispatcher);
             }
@@ -132,11 +153,11 @@ namespace Orleans.Bus
 
                 var registered = queries.Find(attribute.Query);
                 if (registered != null)
-                    throw new DuplicateHandlerException(attribute.Query, registered.Grain, grain);
+                    throw new DuplicateHandlesAttributeException(attribute.Query, registered.Grain, grain);
 
-                var dispatcher = queryDispatchers.SingleOrDefault(x => x.Grain == grain);
+                var dispatcher = queryHandlers.SingleOrDefault(x => x.Grain == grain);
                 if (dispatcher == null)
-                    throw new DispatcherNotRegisteredException(grain);
+                    throw new HandlerNotRegisteredException(grain);
 
                 queries.Add(attribute.Query, dispatcher);
             }
@@ -150,12 +171,12 @@ namespace Orleans.Bus
             if (command == null)
                 throw new ArgumentNullException("command");
 
-            var dispatcher = commands.Find(command.GetType());
-            if (dispatcher == null)
-                throw new DispatcherNotFoundException(command.GetType());
+            var handler = commands.Find(command.GetType());
+            if (handler == null)
+                throw new HandlerNotFoundException(command.GetType());
 
-            var grain = factory.GetReference(dispatcher.Grain, destination);
-            return dispatcher.Dispatch(grain, command).UnwrapExceptions();
+            var grain = factory.GetReference(handler.Grain, destination);
+            return handler.Handle(grain, command).UnwrapExceptions();
         }
 
         async Task<TResult> IMessageBus.Query<TResult>(string destination, object query)
@@ -166,75 +187,75 @@ namespace Orleans.Bus
             if (query == null)
                 throw new ArgumentNullException("query");
 
-            var dispatcher = queries.Find(query.GetType());
-            if (dispatcher == null)
-                throw new DispatcherNotFoundException(query.GetType());
+            var handler = queries.Find(query.GetType());
+            if (handler == null)
+                throw new HandlerNotFoundException(query.GetType());
 
-            var reference = factory.GetReference(dispatcher.Grain, destination);
-            return (TResult)(await dispatcher.Dispatch(reference, query).UnwrapExceptions());
+            var reference = factory.GetReference(handler.Grain, destination);
+            return (TResult)(await handler.Handle(reference, query).UnwrapExceptions());
         }
 
         [Serializable]
-        internal class DuplicateHandlerException : ApplicationException
+        internal class DuplicateHandlesAttributeException : ApplicationException
         {
             const string description = "The handler for {0} is already registered by {1}. Duplicate grain: {2}";
 
-            public DuplicateHandlerException(Type message, Type registeredBy, Type duplicate)
+            public DuplicateHandlesAttributeException(Type message, Type registeredBy, Type duplicate)
                 : base(string.Format(description, message, registeredBy, duplicate))
             {}
 
-            protected DuplicateHandlerException(SerializationInfo info, StreamingContext context)
+            protected DuplicateHandlesAttributeException(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {}
         }        
         
         [Serializable]
-        internal class DuplicateDispatcherException : ApplicationException
+        internal class DuplicateHandlerMethodException : ApplicationException
         {
-            const string description = "Duplicate {0} dispatcher is specified by {1}";
+            const string description = "Duplicate {0} handler method is specified by {1}";
 
-            public DuplicateDispatcherException(string kind, Type grain)
+            public DuplicateHandlerMethodException(string kind, Type grain)
                 : base(string.Format(description, kind, grain))
             {}
 
-            protected DuplicateDispatcherException(SerializationInfo info, StreamingContext context)
+            protected DuplicateHandlerMethodException(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {}
         }
 
         [Serializable]
-        internal class DispatcherNotRegisteredException : ApplicationException
+        internal class HandlerNotRegisteredException : ApplicationException
         {
-            const string description = "{0} specifies [Handles/Answers] attributes but no dispatcher could be found.\r\nCheck that you've put [Dispatcher] attribute on a method";
+            const string description = "{0} specifies [Handles/Answers] attributes but no handler could be found.\r\nCheck that you've put [Handler] attribute on a method";
 
-            internal DispatcherNotRegisteredException(Type grain)
+            internal HandlerNotRegisteredException(Type grain)
                 : base(string.Format(description, grain))
             {}
 
-            protected DispatcherNotRegisteredException(SerializationInfo info, StreamingContext context)
+            protected HandlerNotRegisteredException(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {}
         }
 
         [Serializable]
-        internal class DispatcherNotFoundException : ApplicationException
+        internal class HandlerNotFoundException : ApplicationException
         {
-            const string description = "Can't find dispatcher for '{0}'.\r\nCheck that you've marked grain with [ExtendedPrimaryKey] and corresponding [Handles/Answers] attributes";
+            const string description = "Can't find handler for '{0}'.\r\nCheck that you've marked grain with [ExtendedPrimaryKey] and corresponding [Handles/Answers] attributes";
 
-            internal DispatcherNotFoundException(Type message)
+            internal HandlerNotFoundException(Type message)
                 : base(string.Format(description, message))
             {}
 
-            protected DispatcherNotFoundException(SerializationInfo info, StreamingContext context)
+            protected HandlerNotFoundException(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {}
         }
 
-        abstract class Dispatcher
+        abstract class Handler
         {
             public readonly Type Grain;
 
-            protected Dispatcher(Type grain)
+            protected Handler(Type grain)
             {
                 Grain = grain;
             }
@@ -243,7 +264,7 @@ namespace Orleans.Bus
             {
                 if (ReferenceEquals(null, obj))
                     return false;
-                
+
                 if (ReferenceEquals(this, obj))
                     return true;
 
@@ -256,7 +277,7 @@ namespace Orleans.Bus
             }
         }
 
-        class CommandDispatcher : Dispatcher
+        class CommandHandler : Handler
         {
             public static bool Satisfies(MethodInfo method)
             {
@@ -266,14 +287,14 @@ namespace Orleans.Bus
                         method.ReturnType == typeof(Task);
             }
 
-            public static CommandDispatcher Create(Type grain, MethodInfo method)
+            public static CommandHandler Create(Type grain, MethodInfo method)
             {
-                return new CommandDispatcher(grain, method);
+                return new CommandHandler(grain, method);
             }
 
-            readonly Func<object, object, Task> dispatch;
+            public readonly Func<object, object, Task> Handle;
 
-            CommandDispatcher(Type grain, MethodInfo method) : base(grain)
+            CommandHandler(Type grain, MethodInfo method) : base(grain)
             {
                 var target = Expression.Parameter(typeof(object), "target");
                 var argument = Expression.Parameter(typeof(object), "command");
@@ -281,16 +302,11 @@ namespace Orleans.Bus
                 var call = Expression.Call(Expression.Convert(target, Grain), method, new Expression[] { argument });
                 var lambda = Expression.Lambda<Func<object, object, Task>>(call, target, argument);
 
-                dispatch = lambda.Compile();
-            }
-
-            public Task Dispatch(object grain, object command)
-            {
-                return dispatch(grain, command);
+                Handle = lambda.Compile();
             }
         }
 
-        class QueryDispatcher : Dispatcher
+        class QueryHandler : Handler
         {
             public static bool Satisfies(MethodInfo method)
             {
@@ -300,14 +316,14 @@ namespace Orleans.Bus
                         method.ReturnType == typeof(Task<object>);
             }
 
-            readonly Func<object, object, Task<object>> dispatch;
+            public readonly Func<object, object, Task<object>> Handle;
 
-            public static QueryDispatcher Create(Type grain, MethodInfo method)
+            public static QueryHandler Create(Type grain, MethodInfo method)
             {
-                return new QueryDispatcher(grain, method);
+                return new QueryHandler(grain, method);
             }
 
-            QueryDispatcher(Type grain, MethodInfo method) : base(grain)
+            QueryHandler(Type grain, MethodInfo method) : base(grain)
             {
                 var target = Expression.Parameter(typeof(object), "target");
                 var argument = Expression.Parameter(typeof(object), "query");
@@ -315,12 +331,7 @@ namespace Orleans.Bus
                 var call = Expression.Call(Expression.Convert(target, Grain), method, new Expression[] { argument });
                 var lambda = Expression.Lambda<Func<object, object, Task<object>>>(call, target, argument);
 
-                dispatch = lambda.Compile();
-            }
-
-            public Task<object> Dispatch(object grain, object query)
-            {
-                return dispatch(grain, query);
+                Handle = lambda.Compile();
             }
         }
     }

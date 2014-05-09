@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
@@ -38,15 +37,36 @@ namespace Orleans.Bus
     public class GetBar : Query<string>
     {}
 
+    [Immutable, Serializable]
+    public class PublishText : Command
+    {
+        public readonly string Text;
+
+        public PublishText(string text)
+        {
+            Text = text;
+        }
+    }
+
+    [Serializable]
+    public class TextPublished : Event
+    {
+        public readonly string Text;
+
+        public TextPublished(string text)
+        {
+            Text = text;
+        }
+    }
+
     [Handles(typeof(DoFoo))]
     [Handles(typeof(DoBar))]
     [Handles(typeof(ThrowException))]
     [Answers(typeof(GetFoo))]
     [Answers(typeof(GetBar))]
+    [Handles(typeof(PublishText))]
+    [Notifies(typeof(TextPublished))]
     [ExtendedPrimaryKey]
-    public interface ITestGrain : IGrain
-    {
-        [Dispatcher] Task Handle(object cmd);
-        [Dispatcher] Task<object> Answer(object query);
-    }
+    public interface ITestGrain : IPocoGrain
+    {}
 }

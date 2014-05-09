@@ -19,7 +19,7 @@ namespace Orleans.Bus
         [Test]
         public void When_more_than_one_handler_is_specified_for_command_within_the_same_grain()
         {
-            Assert.Throws<MessageBus.DuplicateHandlerException>(() => bus.Register(new[] { 
+            Assert.Throws<MessageBus.DuplicateHandlesAttributeException>(() => bus.Register(new[] { 
                     typeof(GrainWhichHasDuplicateHandleAttribute)                     
             }));
         }
@@ -27,7 +27,7 @@ namespace Orleans.Bus
         [Test]
         public void When_more_than_one_handler_is_specified_for_command_in_different_grains()
         {
-            Assert.Throws<MessageBus.DuplicateHandlerException>(()=> bus.Register(new[] { 
+            Assert.Throws<MessageBus.DuplicateHandlesAttributeException>(()=> bus.Register(new[] { 
                     typeof(GrainWhichHandlesTestCommand), 
                     typeof(AnotherGrainWhichAlsoHandlesTestCommand) 
             }));
@@ -36,7 +36,7 @@ namespace Orleans.Bus
         [Test]
         public void When_more_than_one_handler_is_specified_for_query_within_the_same_grain()
         {
-            Assert.Throws<MessageBus.DuplicateHandlerException>(() => bus.Register(new[] { 
+            Assert.Throws<MessageBus.DuplicateHandlesAttributeException>(() => bus.Register(new[] { 
                     typeof(GrainWhichHasDuplicateAnswersAttribute)                     
             }));
         }
@@ -44,7 +44,7 @@ namespace Orleans.Bus
         [Test]
         public void When_more_than_one_handler_is_specified_for_query_in_different_grains()
         {
-            Assert.Throws<MessageBus.DuplicateHandlerException>(() => bus.Register(new[] { 
+            Assert.Throws<MessageBus.DuplicateHandlesAttributeException>(() => bus.Register(new[] { 
                     typeof(GrainWhichAnswersTestQuery), 
                     typeof(AnotherGrainWhichAlsoAnswersTestQuery) 
             }));
@@ -62,21 +62,21 @@ namespace Orleans.Bus
     [ExtendedPrimaryKey]
     public interface GrainWhichHasDuplicateHandleAttribute : IGrain
     {
-        [Dispatcher] Task Dispatch(object cmd);
+        [Handler] Task Dispatch(object cmd);
     }
 
     [Handles(typeof(TestCommand))]
     [ExtendedPrimaryKey]
     public interface GrainWhichHandlesTestCommand : IGrain
     {
-        [Dispatcher] Task Dispatch(object cmd);
+        [Handler] Task Dispatch(object cmd);
     }
 
     [Handles(typeof(TestCommand))]
     [ExtendedPrimaryKey]
     public interface AnotherGrainWhichAlsoHandlesTestCommand : IGrain
     {
-        [Dispatcher] Task Dispatch(object cmd);
+        [Handler] Task Dispatch(object cmd);
     }
 
     [Answers(typeof(TestQuery))]
@@ -84,20 +84,20 @@ namespace Orleans.Bus
     [ExtendedPrimaryKey]
     public interface GrainWhichHasDuplicateAnswersAttribute : IGrain
     {
-        [Dispatcher] Task<object> Dispatch(object cmd);
+        [Handler] Task<object> Dispatch(object cmd);
     }
 
     [Answers(typeof(TestQuery))]
     [ExtendedPrimaryKey]
     public interface GrainWhichAnswersTestQuery : IGrain
     {
-        [Dispatcher] Task<object> Dispatch(object cmd);
+        [Handler] Task<object> Dispatch(object cmd);
     }
 
     [Answers(typeof(TestQuery))]
     [ExtendedPrimaryKey]
     public interface AnotherGrainWhichAlsoAnswersTestQuery : IGrain
     {
-        [Dispatcher] Task<object> Dispatch(object cmd);
+        [Handler] Task<object> Dispatch(object cmd);
     }
 }

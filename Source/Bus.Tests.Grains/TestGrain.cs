@@ -4,42 +4,38 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public class TestGrain : Grain, ITestGrain
+    public class TestGrain : PocoGrain<Poco>, ITestGrain
     {
-        TestPoco poco;
-
-        public override Task ActivateAsync()
+        public TestGrain()
         {
-            poco = new TestPoco(this.Id());
-            return poco.Activate();
-        }
+            Activate = grain =>
+            {
+                var poco = new Poco(Id(), Notify);
+                return poco.Activate();
+            };
 
-        public Task Handle(object cmd)
-        {
-            return poco.Handle((dynamic)cmd);
-        }
-
-        public async Task<object> Answer(object query)
-        {
-            return await poco.Answer((dynamic)query);
+            Handle = (poco, m) => poco.Handle((dynamic)m);
+            Answer = async (poco, m) => await poco.Answer((dynamic)m);
         }
     }
 
-    public class TestPoco
+    public class Poco
     {
         readonly string id;
+        readonly Action<Event> notify;
 
         string fooText = "";
         string barText = "";
 
-        public TestPoco(string id)
+        public Poco(string id, Action<Event> notify)
         {
             this.id = id;
+            this.notify = notify;
         }
 
-        public Task Activate()
+        public Task<Poco> Activate()
         {
-            return TaskDone.Done;
+            return Task.FromResult(this);
         }
 
         public Task Handle(DoFoo cmd)
@@ -71,6 +67,13 @@ namespace Orleans.Bus
         public Task<string> Answer(GetBar query)
         {
             return Task.FromResult(barText + "-" + id);
+        }
+
+        public Task Handle(PublishText cmd)
+        {
+            notify(new TextPublished(cmd.Text));
+
+            return TaskDone.Done;
         }
     }
 }

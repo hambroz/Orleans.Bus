@@ -15,7 +15,7 @@ namespace Orleans.Bus
         /// </summary>
         /// <param name="observer">The observer proxy.</param>
         /// <param name="event">The type of event</param>
-        /// <remarks>The operation is dempotent</remarks>
+        /// <remarks>The operation is idempotent</remarks>
         void Attach(IObserve observer, Type @event);
 
         /// <summary>
@@ -23,11 +23,11 @@ namespace Orleans.Bus
         /// </summary>
         /// <param name="observer">The observer proxy.</param>
         /// <param name="event">The type of event</param>
-        /// <remarks>The operation is dempotent</remarks>
+        /// <remarks>The operation is idempotent</remarks>
         void Detach(IObserve observer, Type @event);
 
         /// <summary>
-        /// Notifies all attached observers passing given event to each of them.
+        /// Notifies all attached observers about given event.
         /// </summary>
         /// <param name="source">An id of the source grain</param>
         /// <param name="event">An event</param>

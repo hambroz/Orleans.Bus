@@ -42,7 +42,6 @@
     <Compile Include="..\ProductAssemblyInfo.cs">
       <Link>Properties\ProductAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="ObserverCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ObservableProxy.cs" />
     <Compile Include="SubscriptionManager.cs" />

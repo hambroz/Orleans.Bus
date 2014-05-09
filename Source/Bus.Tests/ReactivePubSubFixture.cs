@@ -17,7 +17,7 @@ namespace Orleans.Bus
         }
 
         [Test]
-        public async void Strict_subscription()
+        public async void Subscription()
         {
             const string grainId = "11";
 
@@ -46,18 +46,18 @@ namespace Orleans.Bus
         }
 
         [Test]
-        public async void Loose_subscription()
+        public async void Generic_subscription()
         {
             const string grainId = "11";
 
-            using (var proxy = await ReactiveObservableProxy.Create())
+            using (var proxy = await GenericReactiveObservableProxy.Create())
             {
                 var received = new AutoResetEvent(false);
 
                 string source = null;
                 TextPublished @event = null;
 
-                var observable = await proxy.AttachLoose<TextPublished>(grainId);
+                var observable = await proxy.Attach<TextPublished>(grainId);
                 observable.Subscribe(e =>
                 {
                     source = e.Source;

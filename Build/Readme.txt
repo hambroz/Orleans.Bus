@@ -11,11 +11,11 @@
    WARN: Otherwise Orleans.Bus won't be able to find assemblies wich contain static factory classes.
 
 3. Make sure that you grain interface is marked with [ExtendedPrimaryKey] attribute. Then:
-   	- For every command you want to handle - specify [Handle(TCommand)] attribute.
-   	- For every query you want to answer   - specify [Answer(TQuery)] attribute.
-   	- For every event you want to publish  - specify [Publish(TEvent)] attribute.
+   	- For every command you want to handle - specify [Handles(TCommand)] attribute.
+   	- For every query you want to answer   - specify [Answers(TQuery)] attribute.
+   	- For every event you want to notify   - specify [Notifies(TEvent)] attribute.
    
-4. Mark methods to be used for dispatching with [Dispatcher] attribute.
+4. Mark methods to be used for handling commands/queires with [Handler] attribute.
    - One to dispatch commands (single parameter of 'object' type, returns Task)
    - And another one to dispatch queries (single parameter of 'object' type, returns Task<object>)
    
@@ -32,12 +32,14 @@
    	- You can implement support for automatic persistence (via automatic state checking)
    	- Etc
 
+   For simple applications, you can just use PocoGrain base class.
+
 6. For every actor, you'll need to create 2 classes:
 
 	- One serving as a shell, which you will inherit from your application-specific base grain class
 	- Second - will be the POCO, containing actual logic
 	
-	Then from dispatcher method implementation, you will simply dispatch message 
+	Then from handler method implementation, you will simply dispatch message 
 	to a specific handler method on you POCO using 'dynamic' feature of C#
 
 7. If you care about unit testing, make sure that from within grain/client code,
@@ -47,12 +49,13 @@
    - IActivation
    - ITimerCollection
    - IReminderCollection
+   - IObserverCollection
 
    You can pass those interfaces to you POCO (DI), which will allow you to use mocks
    
-6. For observable grains, you'll need to implement IObservableGrain interface. 
-   Use default ObservableCollection to aid in implementation.
-   Use SubscriptionManager to manage subscriptions.
+6. For subscribing to observable grains, you'll need to create an observable client proxy. 
+   Use ObservableProxy/GenericObservableProxy classes
+   RX-based version could be found here https://www.nuget.org/packages/Orleans.Bus.Reactive 
 
 7. For further details see project documentation on GitHub (https://github.com/yevhen/Orleans.Bus)
 

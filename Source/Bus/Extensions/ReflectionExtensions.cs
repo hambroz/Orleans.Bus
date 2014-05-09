@@ -20,10 +20,5 @@ namespace Orleans.Bus
         {
             return provider.GetCustomAttributes(typeof(TAttribute), inherit).Cast<TAttribute>();
         }
-
-        public static IEnumerable<MethodInfo> GetPublicInstanceMethods(this Type type)
-        {
-            return type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-        }
     }
 }

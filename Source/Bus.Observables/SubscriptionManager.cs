@@ -11,8 +11,8 @@ namespace Orleans.Bus
            new SubscriptionManager(DynamicGrainFactory.Instance)
                .Initialize();
 
-        readonly Dictionary<Type, EventDispatcher> events =
-             new Dictionary<Type, EventDispatcher>();
+        readonly Dictionary<Type, EventSubscriber> events =
+             new Dictionary<Type, EventSubscriber>();
 
         readonly DynamicGrainFactory factory;
 
@@ -33,13 +33,13 @@ namespace Orleans.Bus
         {
             foreach (var attribute in grain.Attributes<NotifiesAttribute>())
             {
-                RegisterEventDispatcher(grain, attribute.Event);
+                RegisterEventSubscriber(grain, attribute.Event);
             }
         }
 
-        void RegisterEventDispatcher(Type grain, Type @event)
+        void RegisterEventSubscriber(Type grain, Type @event)
         {
-            var handler = EventDispatcher.Create(grain, @event);
+            var handler = EventSubscriber.Create(grain, @event);
             events.Add(@event, handler);
         }
 
@@ -71,20 +71,20 @@ namespace Orleans.Bus
             await handler.Unsubscribe(reference, proxy);
         }
 
-        class EventDispatcher
+        class EventSubscriber
         {
             public readonly Type Grain;
             public readonly Type Event;
 
-            EventDispatcher(Type grain, Type @event)
+            EventSubscriber(Type grain, Type @event)
             {
                 Grain = grain;
                 Event = @event;
             }
 
-            public static EventDispatcher Create(Type grain, Type @event)
+            public static EventSubscriber Create(Type grain, Type @event)
             {
-                return new EventDispatcher(grain, @event);
+                return new EventSubscriber(grain, @event);
             }
 
             public async Task Subscribe(object grain, IObserve proxy)

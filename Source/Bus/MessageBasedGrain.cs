@@ -8,7 +8,7 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for all message based grains
     /// </summary>
-    public abstract class MessageBasedGrain : GrainBase, IExposeGrainInternals
+    public abstract class MessageBasedGrain : GrainBase, IObservableGrain, IExposeGrainInternals
     {
         /// <summary>
         /// Reference to <see cref="IMessageBus"/>. Points to global runtime-bound implementation by default.
@@ -16,9 +16,9 @@ namespace Orleans.Bus
         public IMessageBus Bus;
 
         /// <summary>
-        /// Reference to grain activation service. Points to runtime-bound implementation by default.
+        /// Returns identity of this grain. Points to runtime-bound implementation by default.
         /// </summary>
-        public IActivation Activation;
+        public Func<string> Id;
 
         /// <summary>
         /// Reference to grain timers collection. Points to runtime-bound implementation by default.
@@ -31,14 +31,59 @@ namespace Orleans.Bus
         public IReminderCollection Reminders;
 
         /// <summary>
+        /// Reference to grain activation service. Points to runtime-bound implementation by default.
+        /// </summary>
+        public IActivation Activation;
+
+        /// <summary>
+        /// Reference to observer collection. Points to runtime-bound implementation by default.
+        /// </summary>
+        public IObserverCollection Observers;
+
+        /// <summary>
         /// Default constructor, which initialize all local services to runtime-bound implementations by default.
         /// </summary>
         protected MessageBasedGrain()
         {
             Bus = MessageBus.Instance;
-            Activation = new Activation(this);
+            Id  = () => Identity.Of(this);
             Timers = new TimerCollection(this);
             Reminders = new ReminderCollection(this);
+            Observers = new ObserverCollection();
+            Activation = new Activation(this);
+        }
+
+        /// <summary>
+        /// Attaches untyped observer for the given type of event.
+        /// </summary>
+        /// <param name="o">The observer proxy.</param>
+        /// <param name="e">The type of event</param>
+        /// <remarks>The operation is idempotent</remarks>
+        public virtual Task Attach(IObserve o, Type e)
+        {
+            Observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        /// <summary>
+        /// Detaches given untyped observer for the given type of event.
+        /// </summary>
+        /// <param name="o">The observer proxy.</param>
+        /// <param name="e">The type of event</param>
+        /// <remarks>The operation is idempotent</remarks>
+        public virtual Task Detach(IObserve o, Type e)
+        {
+            Observers.Detach(o, e);
+            return TaskDone.Done;
+        }
+
+        /// <summary>
+        /// Notifies all attached observers about given event.
+        /// </summary>
+        /// <param name="e">An event</param>
+        protected void Notify<TEvent>(TEvent e)
+        {
+            Observers.Notify(Id(), e);
         }
 
         void IExposeGrainInternals.DeactivateOnIdle()
@@ -80,7 +125,7 @@ namespace Orleans.Bus
     /// <summary>
     /// Base class for all persistent message based grains
     /// </summary>
-    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IExposeGrainInternals 
+    public abstract class MessageBasedGrain<TState> : GrainBase<TState>, IObservableGrain, IExposeGrainInternals 
         where TState : class, IGrainState
     {
         /// <summary>
@@ -89,9 +134,9 @@ namespace Orleans.Bus
         public IMessageBus Bus;
 
         /// <summary>
-        /// Reference to grain activation service. Points to runtime-bound implementation by default.
+        /// Returns identity of this grain. Points to runtime-bound implementation by default.
         /// </summary>
-        public IActivation Activation;
+        public Func<string> Id;
 
         /// <summary>
         /// Reference to grain timers collection. Points to runtime-bound implementation by default.
@@ -104,14 +149,59 @@ namespace Orleans.Bus
         public IReminderCollection Reminders;
 
         /// <summary>
+        /// Reference to grain activation service. Points to runtime-bound implementation by default.
+        /// </summary>
+        public IActivation Activation;
+
+        /// <summary>
+        /// Reference to observer collection. Points to runtime-bound implementation by default.
+        /// </summary>
+        public IObserverCollection Observers;
+
+        /// <summary>
         /// Default constructor, which initialize all local services to runtime-bound implementations by default.
         /// </summary>
         protected MessageBasedGrain()
         {
             Bus = MessageBus.Instance;
-            Activation = new Activation(this);
+            Id = () => Identity.Of(this);
             Timers = new TimerCollection(this);
             Reminders = new ReminderCollection(this);
+            Observers = new ObserverCollection();
+            Activation = new Activation(this);
+        }
+
+        /// <summary>
+        /// Attaches untyped observer for the given type of event.
+        /// </summary>
+        /// <param name="o">The observer proxy.</param>
+        /// <param name="e">The type of event</param>
+        /// <remarks>The operation is idempotent</remarks>
+        public virtual Task Attach(IObserve o, Type e)
+        {
+            Observers.Attach(o, e);
+            return TaskDone.Done;
+        }
+
+        /// <summary>
+        /// Detaches given untyped observer for the given type of event.
+        /// </summary>
+        /// <param name="o">The observer proxy.</param>
+        /// <param name="e">The type of event</param>
+        /// <remarks>The operation is idempotent</remarks>
+        public virtual Task Detach(IObserve o, Type e)
+        {
+            Observers.Detach(o, e);
+            return TaskDone.Done;
+        }
+
+        /// <summary>
+        /// Notifies all attached observers about given event.
+        /// </summary>
+        /// <param name="e">An event</param>
+        protected void Notify<TEvent>(TEvent e)
+        {
+            Observers.Notify(Id(), e);
         }
 
         void IExposeGrainInternals.DeactivateOnIdle()

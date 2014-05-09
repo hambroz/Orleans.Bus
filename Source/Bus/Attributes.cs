@@ -71,6 +71,6 @@ namespace Orleans.Bus
     /// which will internally dispatch commands or queries
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class DispatcherAttribute : Attribute
+    public sealed class HandlerAttribute : Attribute
     {}
 }

@@ -46,9 +46,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Grain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestObservableGrain.cs" />
     <Compile Include="TestGrain.cs" />
   </ItemGroup>
   <ItemGroup>
