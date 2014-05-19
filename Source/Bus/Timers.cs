@@ -101,7 +101,8 @@ namespace Orleans.Bus
         public void Unregister(string id)
         {
             var timer = timers[id];
-            timer.Dispose();
+            timers.Remove(id);
+            timer.Dispose();            
         }
 
         public bool IsRegistered(string id)
