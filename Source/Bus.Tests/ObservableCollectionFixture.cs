@@ -28,6 +28,12 @@ namespace Orleans.Bus
         }
 
         [Test]
+        public void Notify_when_no_observers()
+        {
+            Assert.DoesNotThrow(() => collection.Notify("test", @event));
+        }
+
+        [Test]
         public void Attach_is_idempotent()
         {
             collection.Attach(proxy, @event);

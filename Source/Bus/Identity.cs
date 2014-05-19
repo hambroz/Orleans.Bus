@@ -24,11 +24,21 @@ namespace Orleans.Bus
         /// Returns runtime identity of the given grain reference
         /// </summary>
         /// <param name="reference">Runtime grain reference</param>
-        /// <returns>Id assigned to the grain</returns>
+        /// <returns>Id assigned to the underlying grain</returns>
         public static string Of(GrainReference reference)
         {
             var key = reference.ToKeyString();
             return key.Substring(key.IndexOf("+", StringComparison.Ordinal) + 1);
+        }        
+        
+        /// <summary>
+        /// Returns runtime identity of this grain reference
+        /// </summary>
+        /// <param name="reference">Runtime grain reference</param>
+        /// <returns>Id assigned to the underlying grain</returns>
+        public static string Id(this GrainReference reference)
+        {
+            return Identity.Of(reference);
         }
     }
 }

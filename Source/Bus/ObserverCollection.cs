@@ -65,8 +65,12 @@ namespace Orleans.Bus
         void IObserverCollection.Notify(string source, object @event)
         {
             var failed = new List<IObserve>();
-            
-            foreach (var observer in Observers(@event.GetType()))
+
+            var observers = Observers(@event.GetType());
+            if (observers == null)
+                return;
+
+            foreach (var observer in observers)
             {
                 try
                 {
@@ -78,13 +82,13 @@ namespace Orleans.Bus
                 }
             }
 
-            Observers(@event.GetType()).RemoveWhere(failed.Contains);
+            observers.RemoveWhere(failed.Contains);
         }
 
         internal HashSet<IObserve> Observers(Type @event)
         {
-            HashSet<IObserve> observers;
-            return subscriptions.TryGetValue(@event, out observers) ? observers : null;
+            HashSet<IObserve> result;
+            return subscriptions.TryGetValue(@event, out result) ? result : null;
         }
     }
 }
