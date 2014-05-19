@@ -19,5 +19,16 @@ namespace Orleans.Bus
             grain.GetPrimaryKeyLong(out id);
             return id;
         }
+
+        /// <summary>
+        /// Returns runtime identity of the given grain reference
+        /// </summary>
+        /// <param name="reference">Runtime grain reference</param>
+        /// <returns>Id assigned to the grain</returns>
+        public static string Of(GrainReference reference)
+        {
+            var key = reference.ToKeyString();
+            return key.Substring(key.IndexOf("+", StringComparison.Ordinal) + 1);
+        }
     }
 }

@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BusFixture.cs" />
+    <Compile Include="IdentityFixture.cs" />
     <Compile Include="ObservableCollectionFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PubSubFixture.cs" />
