@@ -1,3 +1,5 @@
+![Orleans.Bus](https://github.com/yevhen/Orleans.Bus/blob/master/Logo.png)
+
 ## Message bus for Orleans
 
 This project aims to bring familiar message bus communication style to Orleans framework.
