@@ -1,4 +1,4 @@
-![Orleans.Bus](https://github.com/yevhen/Orleans.Bus/blob/master/Logo.png)
+![Orleans.Bus](Logo.Wide.png)
 
 ## Message bus for Orleans
 
