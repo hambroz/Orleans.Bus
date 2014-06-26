@@ -1,8 +1,6 @@
 ![Orleans.Bus](Logo.Wide.png)
 
-## Message bus for Orleans
-
-This project aims to bring familiar message bus communication style to Orleans framework.
+Message bus for Orleans
 
 ## Main features
 
