@@ -7,7 +7,7 @@ namespace Orleans.Bus
     /// <summary>
     /// Base interface for POCO grains
     /// </summary>
-    public interface IPocoGrain : IObservableGrain
+    public interface IPocoGrain : IMessageBasedGrain
     {
         /// <summary>
         /// Generic command handler
@@ -72,8 +72,7 @@ namespace Orleans.Bus
     /// </summary>
     /// <typeparam name="TPoco">Type of POCO object</typeparam>
     /// <typeparam name="TState">Type of persistent state</typeparam>
-    public abstract class PocoGrain<TPoco, TState> : MessageBasedGrain<TState>, IPocoGrain 
-        where TState : class, IGrainState
+    public abstract class PocoGrain<TPoco, TState> : MessageBasedGrain<TState>, IPocoGrain         
     {
         /// <summary>
         /// Set this activator delegate in subclass to return and activate new instance of <typeparamref name="TPoco"/>
@@ -102,7 +101,8 @@ namespace Orleans.Bus
         /// </summary>
         public override async Task ActivateAsync()
         {
-            poco = await Activate(this);
+            await base.ActivateAsync();
+            poco = await Activate(this);            
         }
 
         Task IPocoGrain.HandleCommand(object cmd)

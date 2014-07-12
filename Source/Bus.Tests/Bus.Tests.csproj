@@ -63,6 +63,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BusFixture.cs" />
+    <Compile Include="MockStorageProvider.cs" />
+    <Compile Include="PersistenceFixture.cs" />
     <Compile Include="IdentityFixture.cs" />
     <Compile Include="ObservableCollectionFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

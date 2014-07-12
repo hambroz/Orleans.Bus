@@ -2,7 +2,14 @@
 <OrleansConfiguration xmlns="urn:orleans">
   <Globals>
     <StorageProviders>
-      <Provider Type="Orleans.Storage.MemoryStorage" Name="MemoryStore" />
+      
+      <Provider Type="Orleans.Bus.MockStorageProvider" 
+                Name="PersistentGrainStorageProvider"
+                DefaultValue="0"/>
+      
+      <Provider Type="Orleans.Storage.MemoryStorage" 
+                Name="MemoryStore" />
+      
     </StorageProviders>
     <SeedNode Address="localhost" Port="11111" />
   </Globals>

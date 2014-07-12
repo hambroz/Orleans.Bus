@@ -46,6 +46,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IPersistentGrain.cs" />
     <Compile Include="ITestGrain.cs" />
     <Compile Include="Meta.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
