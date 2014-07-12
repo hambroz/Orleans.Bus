@@ -1,107 +1,82 @@
-﻿#r "Packages\Nake.1.0.1.0\tools\net45\Meta.dll"
-#r "Packages\Nake.1.0.1.0\tools\net45\Utility.dll"
-#r "System.Xml"
+﻿#r "System.Xml"
 #r "System.Xml.Linq"
 
-using Nake;
-using System.IO;
+using Nake.FS;
+using Nake.Run;
+using Nake.Log;
+
 using System.Linq;
 using System.Xml.Linq;
 using System.Diagnostics;
 
 const string Project = "Orleans.Bus";
+const string RootPath = "$NakeScriptDirectory$";
+const string OutputPath = RootPath + @"\Output";
 
-public const string RootPath = "$NakeScriptDirectory$";
-public const string OutputPath = RootPath + @"\Output";
-
-[Task] public static void Default()
+/// Builds sources in Debug mode
+[Task] void Default()
 {
 	Build();
 }
 
-/// <summary> 
 /// Wipeout all build output and temporary build files
-/// </summary>
-[Task] public static void Clean(string path = OutputPath)
+[Step] void Clean(string path = OutputPath)
 {
-	FS.RemoveDir(@"**\bin|**\obj");
-
-	FS.Delete(@"{path}\*.*|-:*.vshost.exe");
-	FS.RemoveDir(@"{path}\*");
+    Delete(@"{path}\*.*|-:*.vshost.exe");
+    RemoveDir(@"**\bin|**\obj|{path}\*|-:*.vshost.exe");
 }
 
-/// <summary> 
-/// Builds Orleans.IoC sources  
-/// </summary>
-[Task] public static void Build(string configuration = "Debug", string outputPath = OutputPath)
+/// Builds sources using specified configuration and output path
+[Step] void Build(string config = "Debug", string outDir = OutputPath)
 {
-	Clean(outputPath);
+    Clean(outDir);
 
-	MSBuild
-		
-		.Projects("{Project}.sln")
-			.Property("Platform", "Any CPU")
-			.Property("Configuration", configuration)
-			.Property("OutDir", outputPath)
-			.Property("ReferencePath", outputPath)
-
-	.Build();
+    MSBuild("{Project}.sln", 
+            "Configuration={config};OutDir={outDir};ReferencePath={outDir}");
 }
 
-/// <summary> 
-/// Runs unit tests
-/// </summary>
-[Task] public static void Test(string configuration = "Debug", string outputPath = OutputPath)
+/// Runs unit tests 
+[Step] void Test(string outputPath = OutputPath)
 {
-	Build(configuration, outputPath);
+    Build("Debug", outputPath);
 
-	string tests = new FileSet
-	{
-		@"{outputPath}\*.Tests.dll"
-	};
-
-	Cmd.Exec(@"Packages\NUnit.Runners.2.6.3\tools\nunit-console.exe /framework:net-4.5 /noshadow /nologo {tests}");
+    FileSet tests = @"{outputPath}\*.Tests.dll";
+    Cmd(@"Packages\NUnit.Runners.2.6.3\tools\nunit-console.exe /framework:net-4.0 /noshadow /nologo {tests}");
 }
 
-/// <summary> 
-/// Builds official NuGet package for Orleans.IoC
-/// </summary>
-[Task] public static void Package()
+/// Builds official NuGet package 
+[Step] void Package()
 {
-	var packagePath = OutputPath + @"\Package";
-	var releasePath = packagePath + @"\Release";
+    var packagePath = OutputPath + @"\Package";
+    var releasePath = packagePath + @"\Release";
 
-	Test("Debug", packagePath + @"\Debug");
-	Build("Release", releasePath);
+    Test(packagePath + @"\Debug");
+    Build("Release", releasePath);
 
 	var version = FileVersionInfo
 			.GetVersionInfo(@"{releasePath}\{Project}.dll")
 			.FileVersion;
 
-	Cmd.Exec(@"Tools\Nuget.exe pack Build\{Project}.nuspec -Version {version} " +
-			  "-OutputDirectory {packagePath} -BasePath {RootPath} -NoPackageAnalysis");
+	Cmd(@"Tools\Nuget.exe pack Build\{Project}.nuspec -Version {version} " +
+		 "-OutputDirectory {packagePath} -BasePath {RootPath} -NoPackageAnalysis");
 
-	Cmd.Exec(@"Tools\Nuget.exe pack Build\{Project}.Reactive.nuspec -Version {version} " +
-			  "-OutputDirectory {packagePath} -BasePath {RootPath} -NoPackageAnalysis");
+	Cmd(@"Tools\Nuget.exe pack Build\{Project}.Reactive.nuspec -Version {version} " +
+		 "-OutputDirectory {packagePath} -BasePath {RootPath} -NoPackageAnalysis");
 }
 
-/// <summary> 
-/// Installs Orleans.IoC dependencies (packages) from NuGet
-/// </summary>
-[Task] public static void Install()
+/// Installs dependencies (packages) from NuGet 
+[Task] void Install()
 {
-	var packagesDir = @"{RootPath}\Packages";
+    var packagesDir = @"{RootPath}\Packages";
 
-	var configs = XElement
-		.Load(packagesDir + @"\repositories.config")
-		.Descendants("repository")
-		.Select(x => x.Attribute("path").Value.Replace("..", RootPath)); 
+    var configs = XElement
+        .Load(packagesDir + @"\repositories.config")
+        .Descendants("repository")
+        .Select(x => x.Attribute("path").Value.Replace("..", RootPath)); 
 
-	foreach (var config in configs)
-	{
-		Cmd.Exec(@"Tools\NuGet.exe install {config} -o {packagesDir}");
-	}
+    foreach (var config in configs)
+        Cmd(@"Tools\NuGet.exe install {config} -o {packagesDir}");
 
 	// install packages required for building/testing/publishing package
-	Cmd.Exec(@"Tools\NuGet.exe install Build/Packages.config -o {packagesDir}");
+    Cmd(@"Tools\NuGet.exe install Build/Packages.config -o {packagesDir}");
 }
