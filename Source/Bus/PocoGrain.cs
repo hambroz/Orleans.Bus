@@ -48,8 +48,8 @@ namespace Orleans.Bus
 
         /// <summary>
         /// This method is called at the end of the process of activating a grain.
-        ///             It is called before any messages have been dispatched to the grain.
-        ///             For grains with declared persistent state, this method is called after the State property has been populated.
+        /// It is called before any messages have been dispatched to the grain.
+        /// For grains with declared persistent state, this method is called after the State property has been populated.
         /// </summary>
         public override async Task ActivateAsync()
         {            
@@ -72,7 +72,8 @@ namespace Orleans.Bus
     /// </summary>
     /// <typeparam name="TPoco">Type of POCO object</typeparam>
     /// <typeparam name="TState">Type of persistent state</typeparam>
-    public abstract class PocoGrain<TPoco, TState> : MessageBasedGrain<TState>, IPocoGrain         
+    public abstract class PocoGrain<TPoco, TState> : MessageBasedGrain<TState>, IPocoGrain 
+        where TState : class, IGrainState
     {
         /// <summary>
         /// Set this activator delegate in subclass to return and activate new instance of <typeparamref name="TPoco"/>
@@ -96,8 +97,8 @@ namespace Orleans.Bus
 
         /// <summary>
         /// This method is called at the end of the process of activating a grain.
-        ///             It is called before any messages have been dispatched to the grain.
-        ///             For grains with declared persistent state, this method is called after the State property has been populated.
+        ///  It is called before any messages have been dispatched to the grain.
+        ///  For grains with declared persistent state, this method is called after the State property has been populated.
         /// </summary>
         public override async Task ActivateAsync()
         {

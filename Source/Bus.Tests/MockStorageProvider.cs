@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Bus
 {
-    public class MockStorageProvider : StateStorageProvider<int>
+    public class MockStorageProvider : StorageProvider<IPersistentGrainState>
     {
         public MockStorageProvider()
         {
@@ -104,26 +104,27 @@ namespace Orleans.Bus
             return TaskDone.Done;
         }
 
-        public override Task<int> ReadStateAsync(string grainId, string grainType)
+        public override Task ReadStateAsync(string grainId, string grainType, IPersistentGrainState state)
         {
             ReadStateGrainId = grainId;
             ReadStateGrainType = grainType;
-            return Task.FromResult(ReadStateReturnValue);
-        }
-
-        public override Task WriteStateAsync(string grainId, string grainType, int grainState)
-        {
-            WriteStateGrainId = grainId;
-            WriteStateGrainType = grainType;
-            WriteStatePassedValue = grainState;
+            state.Total = ReadStateReturnValue;
             return TaskDone.Done;
         }
 
-        public override Task ClearStateAsync(string grainId, string grainType, int grainState)
+        public override Task WriteStateAsync(string grainId, string grainType, IPersistentGrainState grainState)
+        {
+            WriteStateGrainId = grainId;
+            WriteStateGrainType = grainType;
+            WriteStatePassedValue = grainState.Total;
+            return TaskDone.Done;
+        }
+
+        public override Task ClearStateAsync(string grainId, string grainType, IPersistentGrainState grainState)
         {
             ClearStateGrainId = grainId;
             ClearStateGrainType = grainType;
-            ClearStatePassedValue = grainState;
+            ClearStatePassedValue = grainState.Total;
             return TaskDone.Done;
         }
     }

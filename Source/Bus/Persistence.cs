@@ -9,72 +9,11 @@ using Orleans.Storage;
 namespace Orleans.Bus
 {
     /// <summary>
-    /// Generic state holder for internal purposes
-    /// </summary>
-    public interface IStateHolder : IGrainState
-    {
-        /// <summary>
-        /// Holds actual grain's state
-        /// </summary>
-        object State
-        {
-            get; set;
-        }
-    }
-
-    /// <summary>
-    /// Unit of work which controls state checkpointing
-    /// </summary>
-    public interface IStateStorage
-    {
-        /// <summary>
-        /// Async method to cause refresh of the current grain state data from backin store.
-        ///  Any previous contents of the grain state data will be overwritten.
-        /// </summary>
-        Task ReadStateAsync();
-
-        /// <summary>
-        /// Async method to cause write of the current grain state data into backin store.
-        /// </summary>
-        Task WriteStateAsync();
-
-        /// <summary>
-        /// Async method to cause the current grain state data to be cleared and reset.
-        /// This will usually mean the state record is deleted from backin store, but the specific behavior is defined by the storage provider instance configured for this grain.
-        /// </summary>
-        Task ClearStateAsync();
-    }
-
-    internal class DefaultStateStorage : IStateStorage
-    {
-        readonly IGrainState state;
-
-        public DefaultStateStorage(IGrainState state)
-        {
-            this.state = state;
-        }
-
-        public Task ReadStateAsync()
-        {
-            return state.ReadStateAsync();
-        }
-
-        public Task WriteStateAsync()
-        {
-            return state.WriteStateAsync();
-        }
-
-        public Task ClearStateAsync()
-        {
-            return state.ClearStateAsync();
-        }
-    }
-
-    /// <summary>
     /// Strongly-typed storage provider
     /// </summary>
     /// <typeparam name="TState">Type of the grain state</typeparam>
-    public abstract class StateStorageProvider<TState> : IStorageProvider
+    public abstract class StorageProvider<TState> : IStorageProvider 
+        where TState : class, IGrainState
     {
         string IOrleansProvider.Name
         {
@@ -87,19 +26,19 @@ namespace Orleans.Bus
             return Init(config.Properties);
         }
 
-        async Task IStorageProvider.ReadStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
+        Task IStorageProvider.ReadStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
-            ((IStateHolder) grainState).State = await ReadStateAsync(grainReference.Id(), grainType);
+            return ReadStateAsync(grainReference.Id(), grainType, (TState) grainState);
         }
 
         Task IStorageProvider.WriteStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
-            return WriteStateAsync(grainReference.Id(), grainType, (TState) ((IStateHolder) grainState).State);
+            return WriteStateAsync(grainReference.Id(), grainType, (TState) grainState);
         }
 
         Task IStorageProvider.ClearStateAsync(string grainType, GrainReference grainReference, GrainState grainState)
         {
-            return ClearStateAsync(grainReference.Id(), grainType, (TState) ((IStateHolder)grainState).State);
+            return ClearStateAsync(grainReference.Id(), grainType, (TState)(IGrainState)grainState);
         }
 
         /// <summary>
@@ -139,10 +78,11 @@ namespace Orleans.Bus
         /// </summary>
         /// <param name="grainId">Id of the grain.</param>
         /// <param name="grainType">Type of the grain [fully qualified class name]</param>
+        /// <param name="grainState">Grain state to be populated.</param>
         /// <returns>
         /// Completion promise which return state for the specified grain.
         /// </returns>
-        public abstract Task<TState> ReadStateAsync(string grainId, string grainType);
+        public abstract Task ReadStateAsync(string grainId, string grainType, TState grainState);
 
         /// <summary>
         /// Writes grain's state to backing store
