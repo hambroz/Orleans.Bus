@@ -1,6 +1,6 @@
-<div align="center"><h3>Message bus for Orleans</h3></div>
-
 ![Orleans.Bus](Logo.Wide.png)
+
+# Message bus for Orleans
 
 ## Main features
 
