@@ -1,7 +1,5 @@
 ![Orleans.Bus](Logo.Wide.png)
 
-# Message bus for Orleans
-
 ## Main features
 
 + Superior developer-friendly API
