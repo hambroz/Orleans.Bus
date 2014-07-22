@@ -33,15 +33,9 @@ namespace Orleans.Bus
             return this;
         }
 
-        private static string GetAssemblyPath()
-        {
-            UriBuilder builder = new UriBuilder(Assembly.GetExecutingAssembly().CodeBase);
-            return Path.GetDirectoryName(Uri.UnescapeDataString(builder.Path));
-        }
-
         static IEnumerable<Assembly> LoadAssemblies()
         {
-            var dir = DynamicGrainFactory.GetAssemblyPath();
+            var dir = GetAssemblyPath();
 
             Debug.Assert(dir != null);
             var dlls = Directory.GetFiles(dir, "*.dll");
@@ -50,10 +44,15 @@ namespace Orleans.Bus
                        .Select(Assembly.LoadFrom);
         }
 
+        static string GetAssemblyPath()
+        {
+            var builder = new UriBuilder(Assembly.GetExecutingAssembly().CodeBase);
+            return Path.GetDirectoryName(Uri.UnescapeDataString(builder.Path));
+        }
+
         static bool ContainsOrleansGeneratedCode(string dll)
         {
             var info = FileVersionInfo.GetVersionInfo(dll);
-
             return info.Comments.ToLower() == "contains.orleans.generated.code";
         }
 
