@@ -33,10 +33,15 @@ namespace Orleans.Bus
             return this;
         }
 
+        private static string GetAssemblyPath()
+        {
+            UriBuilder builder = new UriBuilder(Assembly.GetExecutingAssembly().CodeBase);
+            return Path.GetDirectoryName(Uri.UnescapeDataString(builder.Path));
+        }
+
         static IEnumerable<Assembly> LoadAssemblies()
         {
-            var dir = Path.GetDirectoryName(
-                Assembly.GetExecutingAssembly().Location);
+            var dir = DynamicGrainFactory.GetAssemblyPath();
 
             Debug.Assert(dir != null);
             var dlls = Directory.GetFiles(dir, "*.dll");
