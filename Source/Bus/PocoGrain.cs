@@ -35,7 +35,7 @@ namespace Orleans.Bus
         /// <summary>
         /// Set this optional deactivator delegate in subclass to call deactivation behavior on instance of <typeparamref name="TPoco"/>
         /// </summary>
-        protected Func<Task> Deactivate = ()=> TaskDone.Done;
+        protected Func<TPoco, Task> Deactivate = (p) => TaskDone.Done;
 
         /// <summary>
         /// Set this handler delegate in subclass to dispatch incoming command to an instance of given <typeparamref name="TPoco"/>
@@ -66,7 +66,7 @@ namespace Orleans.Bus
         /// </summary>
         public override Task DeactivateAsync()
         {
-            return Deactivate();
+            return Deactivate(poco);
         }
 
         Task IPocoGrain.HandleCommand(object cmd)
