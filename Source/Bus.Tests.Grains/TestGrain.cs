@@ -8,7 +8,7 @@ namespace Orleans.Bus
     {
         public TestGrain()
         {
-            Activate = grain =>
+            Activate =()=>
             {
                 var poco = new Poco(Id(), Notify);
                 return poco.Activate();

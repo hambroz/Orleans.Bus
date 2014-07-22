@@ -29,8 +29,13 @@ namespace Orleans.Bus
         /// <summary>
         /// Set this activator delegate in subclass to return and activate new instance of <typeparamref name="TPoco"/>
         /// </summary>
-        protected Func<MessageBasedGrain, Task<TPoco>> Activate = 
-            x => { throw new InvalidOperationException("Please set activator in subclass constructor"); };
+        protected Func<Task<TPoco>> Activate = 
+            () => { throw new InvalidOperationException("Please set activator in subclass constructor"); };        
+        
+        /// <summary>
+        /// Set this optional deactivator delegate in subclass to call deactivation behavior on instance of <typeparamref name="TPoco"/>
+        /// </summary>
+        protected Func<Task> Deactivate = ()=> TaskDone.Done;
 
         /// <summary>
         /// Set this handler delegate in subclass to dispatch incoming command to an instance of given <typeparamref name="TPoco"/>
@@ -53,7 +58,15 @@ namespace Orleans.Bus
         /// </summary>
         public override async Task ActivateAsync()
         {            
-            poco = await Activate(this);
+            poco = await Activate();
+        }
+
+        /// <summary>
+        /// This method is called at the begining of the process of deactivating a grain.
+        /// </summary>
+        public override Task DeactivateAsync()
+        {
+            return Deactivate();
         }
 
         Task IPocoGrain.HandleCommand(object cmd)
